@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Events{% endblock %}
+
+{% block content %}
+<h1>Browse Events</h1>
+<form class="row g-3">
+    <div class="col-md-4">
+        <label for="priceRange" class="form-label">Price Range</label>
+        <select id="priceRange" class="form-select">
+            <option selected>Choose...</option>
+            <option>0-50</option>
+            <option>50-100</option>
+            <option>100-200</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="date" class="form-label">Date</label>
+        <input type="date" class="form-control" id="date">
+    </div>
+    <div class="col-md-4">
+        <label for="venue" class="form-label">Venue</label>
+        <input type="text" class="form-control" id="venue" placeholder="Enter venue">
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <img src="concert.jpg" class="card-img-top" alt="Event Image">
+            <div class="card-body">
+                <h5 class="card-title">Concert Event</h5>
+                <p class="card-text">Description of the concert.</p>
+                <a href="/event/1" class="btn btn-primary">View Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

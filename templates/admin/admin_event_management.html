@@ -1,0 +1,16 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1>Manage Events</h1>
+<a href="/admin/events/new" class="btn btn-success">Create New Event</a>
+
+<div class="list-group mt-3">
+    <a href="/admin/events/edit/1" class="list-group-item list-group-item-action">
+        <h5 class="mb-1">Concert Event</h5>
+        <p class="mb-1">Date: October 25, 2024 | Venue: Madison Square Garden</p>
+        <small>Tickets Sold: 200/500</small>
+    </a>
+</div>
+{% endblock %}
