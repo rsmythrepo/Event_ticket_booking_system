@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Manage My Bookings{% endblock %}
+
+{% block content %}
+<h1>Manage My Bookings</h1>
+
+{% if bookings %}
+    <div class="list-group">
+        {% for booking in bookings %}
+            <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">{{ booking['event_title'] }}</h5>
+                    <small>Booked on: {{ booking['date'] }}</small>
+                </div>
+                <p class="mb-1">Seats: {{ booking['seats'] }}</p>
+                <small>Status: {{ booking['status'] }}</small>
+                <div class="mt-2">
+                    <a href="/modifybooking/{{ booking['id'] }}" class="btn btn-warning btn-sm">Modify</a>
+                    <a href="/cancelbooking/{{ booking['id'] }}" class="btn btn-danger btn-sm">Cancel</a>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">You have no current bookings to manage.</p>
+{% endif %}
+{% endblock %}
