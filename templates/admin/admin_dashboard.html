@@ -1,0 +1,36 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h4>Admin Dashboard</h4>
+    </div>
+    <div class="card-body">
+        <p>Welcome to the admin dashboard! Here you can manage events, view sales reports, and handle user bookings.</p>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Manage Events</h5>
+                        <p class="card-text">Create, edit, or delete events.</p>
+                        <a href="/admin/events" class="btn btn-primary">Go to Events</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">View Sales Reports</h5>
+                        <p class="card-text">View detailed reports on ticket sales and revenue.</p>
+                        <a href="/admin/salesreport" class="btn btn-primary">Go to Reports</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
