@@ -1,38 +1,63 @@
+# For connecting to mysql locally
+import mysql.connector
+from flask import Flask
+from config import Config
+#-----------------------------------------
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 
 app = Flask(__name__)
 app.secret_key = "secret_key"
 
-# Dummy data for demonstration purposes
-events = [
-    {
-        'id': 1,
-        'title': 'Concert Event',
-        'description': 'An amazing live concert with top performers.',
-        'date': '2024-10-25',
-        'venue': 'Madison Square Garden',
-        'seats': 500,
-        'available_seats': 200,
-        'price_range': [50, 200]
-    },
-]
+# For connecting to mysql locally
+#-------------------------------------------------------
+app.config.from_object(Config)
+app.config['SECRET_KEY'] = 'secret_key'  # Add secret key here
+
+# Initialize MySQL connection
+def connect_db():
+    return mysql.connector.connect(
+        host=app.config['MYSQL_HOST'],
+        user=app.config['MYSQL_USER'],
+        password=app.config['MYSQL_PASSWORD'],
+        database=app.config['MYSQL_DB']
+    )
+#--------------------------------------------------------
 
 bookings = []
 users = []
 admins = []
 
-
 @app.route('/')
 def homepage():
-    return render_template('home.html', events=events)
+    conn = connect_db()
+    cur = conn.cursor(dictionary=True)
 
+    # Fetch events ordered by start_date in descending order
+    cur.execute("SELECT * FROM event ORDER BY start_date ASC")
+    events = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    # Pass the events to the template
+    return render_template('home.html', events=events)
 
 @app.route('/event/<int:event_id>')
 def event_details(event_id):
-    event = next((e for e in events if e['id'] == event_id), None)
+    conn = connect_db()
+    cur = conn.cursor(dictionary=True)
+
+    # Fetch the event by event_id
+    cur.execute("SELECT * FROM event WHERE event_id = %s", (event_id,))
+    event = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
     if not event:
         flash("Event not found!", "error")
         return redirect(url_for('homepage'))
+
     return render_template('event_details.html', event=event)
 
 

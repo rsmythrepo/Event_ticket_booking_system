@@ -26,16 +26,43 @@
         <button type="submit" class="btn btn-primary">Search</button>
     </div>
 </form>
+
 <div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card">
-            <img src="concert.jpg" class="card-img-top" alt="Event Image">
-            <div class="card-body">
-                <h5 class="card-title">Concert Event</h5>
-                <p class="card-text">Description of the concert.</p>
-                <a href="/event/1" class="btn btn-primary">View Details</a>
+    {% for event in events %}
+    <div class="event-item mb-4">
+        <div class="card position-relative">
+            <div class="card-body d-flex">
+
+                <!-- Left Section: Vertical Date -->
+                <div class="left-section me-3 text-center">
+                    <div class="date-vertical">
+                        <span class="day">{{ event['start_date'].strftime('%d') }}</span><br>
+                        <span class="month">{{ event['start_date'].strftime('%b') }}</span><br>
+                        <span class="year">{{ event['start_date'].strftime('%Y') }}</span>
+                    </div>
+                </div>
+
+                <!-- Middle Section: Event Details -->
+                <div class="middle-section flex-grow-1">
+                    <p> {{ event['start_date'].strftime('%a, %H:%M') }}</p>
+                     <h5 class="card-title">{{ event['title'] }}</h5>
+                    <p> {{ event['venue'] }}</p>
+                </div>
+            </div>
+
+            <!-- Display available tickets -->
+            <div class="available-tickets">
+                <p><strong>Available Tickets:</strong> {{ event['available_tickets'] }}</p>
+            </div>
+
+            <!-- Display view event page button -->
+            <div class="view-details">
+                <a href="{{ url_for('event_details', event_id=event['event_id']) }}" class="btn btn-circle">
+                    View Event
+                </a>
             </div>
         </div>
     </div>
+{% endfor %}
 </div>
 {% endblock %}

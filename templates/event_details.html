@@ -3,13 +3,15 @@
 {% block title %}Event Details{% endblock %}
 
 {% block content %}
-<h1>Concert Event</h1>
-<p>Date: October 25, 2024</p>
-<p>Venue: Madison Square Garden</p>
-<p>Description: Enjoy an amazing live concert with top performers.</p>
+<h1>{{ event['title'] }}</h1>
+<p>{{ event['start_date'].strftime('%a, %d %B %Y, %H:%M') }}</p>
+<p> {{ event['venue'] }}</p>
+<p><strong>Description:</strong> {{ event['description'] }}</p>
+
 <h2>Select Seats</h2>
 <div class="seat-map">
+    <!-- You can dynamically load seat maps here if needed -->
 </div>
 
-<a href="/bookevent/1" class="btn btn-primary">Book Tickets</a>
+<a href="{{ url_for('book_event', event_id=event['event_id']) }}" class="btn btn-primary">Book Tickets</a>
 {% endblock %}
