@@ -78,6 +78,7 @@ a:hover {
 
 
 
+
     .seat {
     width: 40px;
     height: 40px;
@@ -106,4 +107,60 @@ a:hover {
     font-weight: bold;
     font-size: 1.5em;
     border-radius: 5px;
+
+    .date-vertical .day {
+    font-weight: normal;
+    font-size: 15px; /* Make the day larger */
+    }
+
+    .date-vertical .month {
+    font-weight: bold; /* Make the month bold */
+    font-size: 18px; /* Adjust month size */
+    }
+
+.date-vertical .year {
+    font-weight: normal;
+    font-size: 15px; /* Adjust year size */
+}
+
+.card {
+    position: relative; /* Needed for the absolute positioning of available tickets */
+}
+
+.middle-section {
+    text-align: left; /* Align the event details to the left */
+    flex-grow: 1; /* Ensure it takes up the available space */
+    padding-left: 20px; /* Add padding to the left */
+}
+
+.available-tickets {
+    position: absolute;
+    bottom: 3px; /* Distance from the bottom of the card */
+    right: 20px; /* Distance from the right side of the card */
+    font-size: 14px; /* Adjust font size */
+    background-color: rgba(255, 255, 255, 0.8); /* Optional: Make the background semi-transparent for readability */
+
+}
+
+.view-details {
+    position: absolute;
+    top: 5px; /* Position button at the top */
+    right: 5px; /* Position button at the right side of the card */
+    padding: 3px 3px; /* Padding for button-like appearance */
+    border-radius: 5px; /* Slightly rounded corners */
+    background-color: #007bff; /* Blue background color */
+    color: white !important; /* White text color */
+    font-weight: bold !important; /* Make the text bold */
+    text-decoration: none; /* Remove underline */
+    font-size: 14px; /* Adjust font size for the text */
+    display: inline-block; /* Button appearance */
+    margin-top: 5px; /* Add margin to the top */
+    margin-right: 5px; /* Add margin to the right */
+    transition: background-color 0.3s ease;
+     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+}
+
+.view-details:hover {
+    background-color: #0056b3;
+
 }

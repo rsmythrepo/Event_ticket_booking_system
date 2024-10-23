@@ -3,6 +3,7 @@
 {% block title %}{{ event.title }} - Event Details{% endblock %}
 
 {% block content %}
+
 <div class="container mt-4">
     <h1 class="text-center">{{ event.title }}</h1>
     <p class="text-center"><strong>Date:</strong> {{ event.start_date.strftime('%B %d, %Y') }}</p>
@@ -61,5 +62,6 @@
         document.getElementById('book-tickets').style.display = selectedSeats.length > 0 ? 'block' : 'none';
     }
 </script>
+
 
 {% endblock %}
