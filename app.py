@@ -1,17 +1,11 @@
-# For connecting to mysql locally
-import mysql.connector
-from flask import Flask
-from config import Config
-#-----------------------------------------
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from __init__ import app, db
 
 
 from ORM.DBClasses import Event, Seat, Booking
-=======
-app = Flask(__name__)
-app.secret_key = "secret_key"
+
+
 
 
 bookings = []
@@ -29,16 +23,6 @@ def homepage():
         flash(f"Error fetching events: {str(e)}", "error")
         events = []
         print(e)
-    return render_template('home.html', events=events)
-
-
-    # Fetch events ordered by start_date in descending order
-    cur.execute("SELECT * FROM event ORDER BY start_date ASC")
-    events = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    # Pass the events to the template
     return render_template('home.html', events=events)
 
 @app.route('/event/<int:event_id>')
