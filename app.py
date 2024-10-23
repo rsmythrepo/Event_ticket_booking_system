@@ -1,10 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from __init__ import app
-from flask_sqlalchemy import SQLAlchemy
+from __init__ import app, db
 
-from ORM.DBClasses import Event
-
-
+from ORM.DBClasses import Event, Seat, Booking
 
 bookings = []
 users = []
@@ -26,48 +23,47 @@ def homepage():
 
 @app.route('/event/<int:event_id>')
 def event_details(event_id):
-    event = next((e for e in events if e['id'] == event_id), None)
+    event = Event.query.get(event_id)
     if not event:
         flash("Event not found!", "error")
         return redirect(url_for('homepage'))
     return render_template('event_details.html', event=event)
+
+
 @app.route('/event/<int:event_id>/seats')
 def show_event_seats(event_id):
     try:
-        cur = mysql.connection.cursor()
-        query = """
-        SELECT seat_id, seat_number, is_available
-        FROM seat
-        WHERE event_id = %s AND is_available = TRUE
-        """
-        cur.execute(query, (event_id,))
-        seats = cur.fetchall()
-        cur.close()
+        seats = Seat.query.filter_by(event_id=event_id, is_available=True).all()
         if len(seats) == 0:
             return render_template('no_seats.html')
         return render_template('seats.html', seats=seats)
     except Exception as e:
         return f"Error: {e}"
 
+
 @app.route('/bookevent/<int:event_id>', methods=['GET', 'POST'])
 def book_event(event_id):
-    event = next((e for e in events if e['id'] == event_id), None)
+    event = Event.query.get(event_id)
     if not event:
         flash("Event not found!", "error")
         return redirect(url_for('homepage'))
 
     if request.method == 'POST':
-        user = "user123"  # Simulating a logged-in user
+        user_id = 1
         seat_count = int(request.form['seat_count'])
 
-        if event['available_seats'] >= seat_count:
-            event['available_seats'] -= seat_count
-            bookings.append({
-                'user': user,
-                'event_id': event_id,
-                'seats': seat_count,
-                'status': 'Confirmed'
-            })
+        if event.available_tickets >= seat_count:
+            event.available_tickets -= seat_count
+
+            booking = Booking(user_id=user_id, event_id=event_id, total_amount=seat_count * event.price_range[0])
+            db.session.add(booking)
+            db.session.commit()
+
+            available_seats = Seat.query.filter_by(event_id=event_id, is_available=True).limit(seat_count).all()
+            for seat in available_seats:
+                seat.is_available = False
+                db.session.commit()
+
             flash("Booking successful!", "success")
         else:
             flash("Not enough seats available.", "error")
@@ -75,7 +71,6 @@ def book_event(event_id):
         return redirect(url_for('my_bookings'))
 
     return render_template('event_details.html', event=event)
-
 
 @app.route('/mybookings')
 def my_bookings():

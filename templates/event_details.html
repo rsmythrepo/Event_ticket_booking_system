@@ -1,15 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}Event Details{% endblock %}
+{% block title %}{{ event.title }} - Event Details{% endblock %}
 
 {% block content %}
-<h1>Concert Event</h1>
-<p>Date: October 25, 2024</p>
-<p>Venue: Madison Square Garden</p>
-<p>Description: Enjoy an amazing live concert with top performers.</p>
-<h2>Select Seats</h2>
-<div class="seat-map">
+<div class="container mt-4">
+    <h1 class="text-center">{{ event.title }}</h1>
+    <p class="text-center"><strong>Date:</strong> {{ event.start_date.strftime('%B %d, %Y') }}</p>
+    <p class="text-center"><strong>Venue:</strong> {{ event.venue }}</p>
+    <p class="text-center"><strong>Description:</strong> {{ event.description }}</p>
+
+    <h2 class="mt-4 text-center">Select Your Seats</h2>
+
+    <div class="seat-map mb-4 text-center">
+        <div class="scene">
+            <div class="stage">Stage</div>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-center" id="seat-container">
+            {% set cols = 7 %}
+            {% set seat_count = event.seats|length %}
+            {% set rows = (seat_count // cols) + (1 if seat_count % cols > 0 else 0) %}  {# Calculate rows based on the number of available seats #}
+
+            {% for row in range(rows) %}
+                <div class="seat-row">
+                    {% for col in range(cols) %}
+                        {% set seat_index = row * cols + col %}
+                        {% if seat_index < seat_count %}
+                            {% set seat = event.seats[seat_index] %} {# Get the seat object #}
+                            <div class="seat" data-seat-id="{{ seat.seat_id }}" style="margin: 5px; cursor: pointer;" onclick="selectSeat(this)">
+                                <span></span>
+                            </div>
+                        {% else %}
+                            <div class="seat" style="margin: 5px; cursor: not-allowed; opacity: 0.3;">
+                                <span></span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <a href="{{ url_for('book_event', event_id=event.event_id) }}" id="book-tickets" class="btn btn-primary mt-5" style="display: none;">Book Tickets</a>
 </div>
 
-<a href="/bookevent/1" class="btn btn-primary">Book Tickets</a>
+<script>
+    let selectedSeats = [];
+
+    function selectSeat(seatElement) {
+        if (selectedSeats.includes(seatElement.getAttribute('data-seat-id'))) {
+
+            seatElement.style.backgroundColor = '';
+            selectedSeats = selectedSeats.filter(seat => seat !== seatElement.getAttribute('data-seat-id'));
+        } else {
+            seatElement.style.backgroundColor = 'lightgreen';
+            selectedSeats.push(seatElement.getAttribute('data-seat-id'));
+        }
+
+        document.getElementById('book-tickets').style.display = selectedSeats.length > 0 ? 'block' : 'none';
+    }
+</script>
+
 {% endblock %}
