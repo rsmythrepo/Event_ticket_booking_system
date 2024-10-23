@@ -4,6 +4,8 @@
 
 {% block content %}
 <h1>Browse Events</h1>
+
+<!-- Search form -->
 <form class="row g-3">
     <div class="col-md-4">
         <label for="priceRange" class="form-label">Price Range</label>
@@ -26,16 +28,29 @@
         <button type="submit" class="btn btn-primary">Search</button>
     </div>
 </form>
+
 <div class="row mt-4">
-    <div class="col-md-4">
-        <div class="card">
-            <img src="concert.jpg" class="card-img-top" alt="Event Image">
-            <div class="card-body">
-                <h5 class="card-title">Concert Event</h5>
-                <p class="card-text">Description of the concert.</p>
-                <a href="/event/1" class="btn btn-primary">View Details</a>
+    {% if events %}
+        {% for event in events %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="{{ url_for('static', filename='images/default_event.jpg') }}" class="card-img-top" alt="Event Image">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">{{ event.description[:100] }}...</p>
+                        <p class="card-text"><strong>Date:</strong> {{ event.start_date.strftime('%Y-%m-%d') }}</p>
+                        <p class="card-text"><strong>Venue:</strong> {{ event.venue }}</p>
+                        <p class="card-text"><strong>Available Tickets:</strong> {{ event.available_tickets }}</p>
+                        <a href="{{ url_for('event_details', event_id=event.event_id) }}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
             </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <p>No events found.</p>
         </div>
-    </div>
+    {% endif %}
 </div>
+
 {% endblock %}

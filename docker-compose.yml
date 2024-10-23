@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: .
+    container_name: flask-app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql-db
+    environment:
+      - FLASK_APP=app.py
+    volumes:
+      - .:/app
+    networks:
+      - app-network
+
+  mysql-db:
+    image: mysql:5.7
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: event_bookings
+      MYSQL_USER: your_user
+      MYSQL_PASSWORD: your_password
+    volumes:
+      - ./Database\ Setup:/docker-entrypoint-initdb.d
+    ports:
+      - "3304:3304"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,21 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from __init__ import app
+from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__)
-app.secret_key = "secret_key"
+from ORM.DBClasses import Event
 
-# Dummy data for demonstration purposes
-events = [
-    {
-        'id': 1,
-        'title': 'Concert Event',
-        'description': 'An amazing live concert with top performers.',
-        'date': '2024-10-25',
-        'venue': 'Madison Square Garden',
-        'seats': 500,
-        'available_seats': 200,
-        'price_range': [50, 200]
-    },
-]
+
 
 bookings = []
 users = []
@@ -24,6 +13,14 @@ admins = []
 
 @app.route('/')
 def homepage():
+
+    try:
+        events = Event.query.all()
+
+    except Exception as e:
+        flash(f"Error fetching events: {str(e)}", "error")
+        events = []
+        print(e)
     return render_template('home.html', events=events)
 
 
@@ -34,7 +31,23 @@ def event_details(event_id):
         flash("Event not found!", "error")
         return redirect(url_for('homepage'))
     return render_template('event_details.html', event=event)
-
+@app.route('/event/<int:event_id>/seats')
+def show_event_seats(event_id):
+    try:
+        cur = mysql.connection.cursor()
+        query = """
+        SELECT seat_id, seat_number, is_available
+        FROM seat
+        WHERE event_id = %s AND is_available = TRUE
+        """
+        cur.execute(query, (event_id,))
+        seats = cur.fetchall()
+        cur.close()
+        if len(seats) == 0:
+            return render_template('no_seats.html')
+        return render_template('seats.html', seats=seats)
+    except Exception as e:
+        return f"Error: {e}"
 
 @app.route('/bookevent/<int:event_id>', methods=['GET', 'POST'])
 def book_event(event_id):
