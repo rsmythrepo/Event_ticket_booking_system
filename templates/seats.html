@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Event Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+        <h2>Available Seats</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Seat ID</th>
+                    <th>Seat Number</th>
+                    <th>Availability</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for seat in seats %}
+                <tr>
+                    <td>{{ seat[0] }}</td>
+                    <td>{{ seat[1] }}</td>
+                    <td>{{ 'Available' if seat[2] else 'Unavailable' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

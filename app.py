@@ -1,60 +1,75 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-
-app = Flask(__name__)
-app.secret_key = "secret_key"
-
-# Dummy data for demonstration purposes
-events = [
-    {
-        'id': 1,
-        'title': 'Concert Event',
-        'description': 'An amazing live concert with top performers.',
-        'date': '2024-10-25',
-        'venue': 'Madison Square Garden',
-        'seats': 500,
-        'available_seats': 200,
-        'price_range': [50, 200]
-    },
-]
+from __init__ import app, db
+from ORM.DBClasses import Event, Seat, Booking
 
 bookings = []
 users = []
 admins = []
 
-
 @app.route('/')
 def homepage():
-    return render_template('home.html', events=events)
+    try:
+        # Fetch all events
+        events = Event.query.order_by(Event.start_date.asc()).all()
 
+    except Exception as e:
+        flash(f"Error fetching events: {str(e)}", "error")
+        events = []
+        print(e)
+
+    return render_template('home.html', events=events)
 
 @app.route('/event/<int:event_id>')
 def event_details(event_id):
-    event = next((e for e in events if e['id'] == event_id), None)
-    if not event:
-        flash("Event not found!", "error")
+    try:
+        # Fetch the event by ID
+        event = Event.query.get(event_id)
+        if not event:
+            flash("Event not found!", "error")
+            return redirect(url_for('homepage'))
+
+    except Exception as e:
+        flash(f"Error fetching event details: {str(e)}", "error")
         return redirect(url_for('homepage'))
+
+    # Pass the event to the template
     return render_template('event_details.html', event=event)
+
+
+@app.route('/event/<int:event_id>/seats')
+def show_event_seats(event_id):
+    try:
+        seats = Seat.query.filter_by(event_id=event_id, is_available=True).all()
+        if len(seats) == 0:
+            return render_template('no_seats.html')
+        return render_template('seats.html', seats=seats)
+    except Exception as e:
+        return f"Error: {e}"
 
 
 @app.route('/bookevent/<int:event_id>', methods=['GET', 'POST'])
 def book_event(event_id):
-    event = next((e for e in events if e['id'] == event_id), None)
+    event = Event.query.get(event_id)
     if not event:
         flash("Event not found!", "error")
         return redirect(url_for('homepage'))
 
     if request.method == 'POST':
-        user = "user123"  # Simulating a logged-in user
+        user_id = 1
         seat_count = int(request.form['seat_count'])
 
-        if event['available_seats'] >= seat_count:
-            event['available_seats'] -= seat_count
-            bookings.append({
-                'user': user,
-                'event_id': event_id,
-                'seats': seat_count,
-                'status': 'Confirmed'
-            })
+        if event.available_tickets >= seat_count:
+            event.available_tickets -= seat_count
+
+            booking = Booking(user_id=user_id, event_id=event_id, total_amount=seat_count * event.price_range[0])
+            db.session.add(booking)
+            db.session.commit()
+
+            available_seats = Seat.query.filter_by(event_id=event_id, is_available=True).limit(seat_count).all()
+            for seat in available_seats:
+                seat.is_available = False
+                db.session.commit()
+
             flash("Booking successful!", "success")
         else:
             flash("Not enough seats available.", "error")
@@ -62,7 +77,6 @@ def book_event(event_id):
         return redirect(url_for('my_bookings'))
 
     return render_template('event_details.html', event=event)
-
 
 @app.route('/mybookings')
 def my_bookings():
