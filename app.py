@@ -17,7 +17,6 @@ def homepage():
         events = []
         print(e)
 
-    # Pass the events to the template
     return render_template('home.html', events=events)
 
 @app.route('/event/<int:event_id>')
