@@ -1,18 +1,6 @@
-# For connecting to mysql locally
-import mysql.connector
-from flask import Flask
-from config import Config
-#-----------------------------------------
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from __init__ import app, db
-
-
 from ORM.DBClasses import Event, Seat, Booking
-=======
-app = Flask(__name__)
-app.secret_key = "secret_key"
-
 
 bookings = []
 users = []
@@ -20,36 +8,32 @@ admins = []
 
 @app.route('/')
 def homepage():
-
-
     try:
-        events = Event.query.all()
+        # Fetch all events
+        events = Event.query.order_by(Event.start_date.asc()).all()
 
     except Exception as e:
         flash(f"Error fetching events: {str(e)}", "error")
         events = []
         print(e)
-    return render_template('home.html', events=events)
-
-
-    # Fetch events ordered by start_date in descending order
-    cur.execute("SELECT * FROM event ORDER BY start_date ASC")
-    events = cur.fetchall()
-    cur.close()
-    conn.close()
 
     # Pass the events to the template
     return render_template('home.html', events=events)
 
 @app.route('/event/<int:event_id>')
 def event_details(event_id):
+    try:
+        # Fetch the event by ID
+        event = Event.query.get(event_id)
+        if not event:
+            flash("Event not found!", "error")
+            return redirect(url_for('homepage'))
 
-    event = Event.query.get(event_id)
-
-    if not event:
-        flash("Event not found!", "error")
+    except Exception as e:
+        flash(f"Error fetching event details: {str(e)}", "error")
         return redirect(url_for('homepage'))
 
+    # Pass the event to the template
     return render_template('event_details.html', event=event)
 
 

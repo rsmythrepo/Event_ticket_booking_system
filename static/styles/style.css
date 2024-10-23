@@ -164,3 +164,16 @@ a:hover {
     background-color: #0056b3;
 
 }
+
+ .date-vertical .day {
+    font-weight: normal;
+    font-size: 15px; /* Make the day larger */
+    }
+    .date-vertical .month {
+    font-weight: bold; /* Make the month bold */
+    font-size: 18px; /* Adjust month size */
+    }
+.date-vertical .year {
+    font-weight: normal;
+    font-size: 15px; /* Adjust year size */
+}

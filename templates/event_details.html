@@ -6,8 +6,8 @@
 
 <div class="container mt-4">
     <h1 class="text-center">{{ event.title }}</h1>
-    <p class="text-center"><strong>Date:</strong> {{ event.start_date.strftime('%B %d, %Y') }}</p>
-    <p class="text-center"><strong>Venue:</strong> {{ event.venue }}</p>
+    <p class="text-center"> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
+    <p class="text-center"> {{ event.venue }}</p>
     <p class="text-center"><strong>Description:</strong> {{ event.description }}</p>
 
     <h2 class="mt-4 text-center">Select Your Seats</h2>
