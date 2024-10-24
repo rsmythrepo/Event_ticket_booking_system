@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from __init__ import app, db
-from ORM.DBClasses import Event, Seat, Booking, TicketTier, EventTicketTier, User
+from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 
 bookings = []
 users = []
@@ -88,10 +88,6 @@ def payment(event_id):
     if not event:
         return "Event not found", 404
 
-    # Assuming you have a session with the logged-in user's ID
-    #user_id = session.get('user_id')
-    #user = User.query.get(user_id)
-
     # Retrieve the selected seat numbers from the form
     selected_seats = request.form.get('selected_seats')
     if not selected_seats:
@@ -104,7 +100,7 @@ def payment(event_id):
     seats = Seat.query.filter(
         Seat.seat_number.in_(selected_seats_list),
         Seat.event_id == event_id,
-        Seat.is_available == True  # Ensure the seat is available
+        Seat.is_available == True
     ).all()
 
     if not seats or len(seats) != len(selected_seats_list):
@@ -118,7 +114,6 @@ def payment(event_id):
         if tier:
             total_amount += tier.price
 
-
     # Render the payment page with event, seats, and total amount
     return render_template('payment.html', event=event, seats=selected_seats_list, total_amount=total_amount)
 
@@ -129,7 +124,6 @@ def confirm_payment(event_id):
     if not event:
         return "Event not found", 404
 
-    # Retrieve form data from the payment page
     cardholder_name = request.form.get('cardholder_name')
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
@@ -137,19 +131,69 @@ def confirm_payment(event_id):
     billing_address = request.form.get('billing_address')
     total_amount = request.form.get('total_amount')
     selected_seats = request.form.get('selected_seats')
+    #save_payment_details = request.form.get('user_payment_details')
 
-    # Convert the selected seats to a list (e.g., ['A3', 'A4'])
     selected_seats_list = selected_seats.split(',')
     seats = Seat.query.filter(
         Seat.seat_number.in_(selected_seats_list),
         Seat.event_id == event_id,
-        Seat.is_available == True  # Ensure the seat is available
+        Seat.is_available == True
     ).all()
 
-    # If payment is successful mark seats as unavailable
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    # Step 1: Create a new Booking
+    new_booking = Booking(
+        user_id=user.user_id,
+        event_id=event_id,
+        total_amount=total_amount,
+        booking_status='confirmed'
+    )
+    db.session.add(new_booking)
+    db.session.flush()
+
+    # Step 2: Mark seats as unavailable and associate them with the booking
     for seat in seats:
         seat.is_available = False  # Mark seats as booked
-        db.session.add(seat)
+        booking_seat = BookingSeat(seat_id=seat.seat_id, booking_id=new_booking.booking_id)
+        db.session.add(booking_seat)
+
+        # Step 3: Generate a Ticket for each booked seat
+        tier = TicketTier.query.join(EventTicketTier).filter(EventTicketTier.event_id == event_id).first()
+        new_ticket = Ticket(
+            booking_id=new_booking.booking_id,
+            event_id=event_id,
+            seat_id=seat.seat_id,
+            tier_id=tier.tier_id  # Assuming we are associating with a specific tier
+        )
+        db.session.add(new_ticket)
+
+    # Step 4: Update the event's ticket counts
+    event.available_tickets -= len(selected_seats_list)
+    db.session.add(event)
+
+    # Step 5: Add Payment Details for the user
+    expiration_date_str = expiration_date + '-01'
+    payment_detail = PaymentDetail(
+        user_id=user.user_id,
+        card_type=card_type,
+        card_number=card_number,
+        cardholder_name=cardholder_name,
+        expiration_date=expiration_date_str,
+        billing_address=billing_address
+    )
+    db.session.add(payment_detail)
+    db.session.flush()
+
+    # Step 6: Record the payment itself
+    payment = Payment(
+        booking_id=new_booking.booking_id,
+        payment_detail_id=payment_detail.payment_detail_id,
+        payment_amount=total_amount,
+        payment_status='paid'  # Assuming the payment is successful
+    )
+    db.session.add(payment)
 
     # Save change of seat and payment
     db.session.commit()
@@ -162,10 +206,12 @@ def payment_confirmation(event_id):
     event = Event.query.get(event_id)
     selected_seats = request.args.get('selected_seats')
     total_amount = request.args.get('total_amount')
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
 
     selected_seats_list = selected_seats.split(',')
 
-    return render_template('payment_confirmation.html', event=event, selected_seats=selected_seats_list, total_amount=total_amount)
+    return render_template('payment_confirmation.html', event=event, selected_seats=selected_seats_list, total_amount=total_amount, firstname=user.firstname)
 
 
 @app.route('/mybookings')

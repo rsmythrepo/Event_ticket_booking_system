@@ -9,15 +9,13 @@
     <h3>Event Details</h3>
     <p><strong>Event Date:</strong> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
     <p><strong>Venue:</strong> {{ event.venue }}</p>
-
-    <h3>Seats</h3>
     <ul>
         {% for seat in seats %}
             <li>Seat: {{ seat }}</li>
         {% endfor %}
     </ul>
 
-    <h3>Total Amount: ${{ total_amount }}</h3>
+    <p><strong>Total Amount:</strong> ${{ total_amount }}</p>
 
     <h3>Payment Details</h3>
 
@@ -55,6 +53,13 @@
 
         <input type="hidden" name="total_amount" value="{{ total_amount }}">
         <input type="hidden" name="selected_seats" value="{{ seats | join(',') }}">
+
+        <!-- TODO - Raph
+        <div class="form-group" style="padding-bottom: 20px;">
+            <input type="checkbox" id="user_payment_details" name="user_payment_details">
+            <label for="user_payment_details">Would you like to save your payment details to this account?</label>
+        </div>
+        -->
 
         <div class="form-group" style="padding-bottom: 20px;">
             <input type="checkbox" id="terms_conditions" name="terms_conditions" required>

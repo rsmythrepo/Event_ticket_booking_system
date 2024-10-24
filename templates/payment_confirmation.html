@@ -4,14 +4,14 @@
 
 {% block content %}
 <div id="confirmationSection">
-    <h1 style="text-align: center;">You're going to {{ event.title }}!</h1>
+    <h1 style="text-align: center;"> {{ firstname }}, you're going to {{ event.title }}!</h1>
     <p></p>
     <p><strong>Event Date:</strong> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
     <p><strong>Venue:</strong> {{ event.venue }}</p>
-    <p><strong>Seats:</strong>
+    <p><strong>Seats:</strong></p>
     <ul>
         {% for seat in selected_seats %}
-            <li>Seat: {{ seat }}</li>
+            <li> {{ seat }}</li>
         {% endfor %}
     </ul>
 
