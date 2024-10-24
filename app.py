@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from __init__ import app, db
-from ORM.DBClasses import Event, Seat, Booking
+from ORM.DBClasses import Event, Seat, Booking, TicketTier, EventTicketTier
 
 bookings = []
 users = []
@@ -8,16 +8,46 @@ admins = []
 
 @app.route('/')
 def homepage():
+    # Extract the query parameters for filtering
+    price_from = request.args.get('price_from', type=int)  # Price Range From
+    price_until = request.args.get('price_until', type=int)  # Price Range Until
+    date = request.args.get('date')  # Date Filter
+    selected_venues = request.args.getlist('venue')  # Multiple selected venues
+
     try:
-        # Fetch all events
-        events = Event.query.order_by(Event.start_date.asc()).all()
+        # Fetch all unique venues for the venue filter
+        venues = [v.venue for v in db.session.query(Event.venue).distinct()]
+
+        # Start with a base query for events, joining event_ticket_tier and ticket_tier for price filtering
+        events_query = db.session.query(Event).join(EventTicketTier).join(TicketTier)
+
+        # Apply price range filter if both values are provided
+        if price_from is not None and price_until is not None:
+            events_query = events_query.filter(TicketTier.price >= price_from, TicketTier.price <= price_until)
+        elif price_from is not None:
+            events_query = events_query.filter(TicketTier.price >= price_from)
+        elif price_until is not None:
+            events_query = events_query.filter(TicketTier.price <= price_until)
+
+        # Apply date filter if selected
+        if date:
+            events_query = events_query.filter(db.func.date(Event.start_date) == date)
+
+        # Apply venue filter if multiple venues are selected
+        if selected_venues:
+            events_query = events_query.filter(Event.venue.in_(selected_venues))
+
+        # Fetch the filtered events, sorted by start date
+        events = events_query.order_by(Event.start_date.asc()).all()
 
     except Exception as e:
         flash(f"Error fetching events: {str(e)}", "error")
         events = []
-        print(e)
+        venues = []
 
-    return render_template('home.html', events=events)
+    # Render the template with the filtered events and venue options
+    return render_template('home.html', events=events, venues=venues)
+
 
 @app.route('/event/<int:event_id>')
 def event_details(event_id):
@@ -34,6 +64,7 @@ def event_details(event_id):
 
     # Pass the event to the template
     return render_template('event_details.html', event=event)
+
 
 
 @app.route('/event/<int:event_id>/seats')
