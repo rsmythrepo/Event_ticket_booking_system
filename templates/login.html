@@ -3,15 +3,19 @@
 {% block title %}Browse Events{% endblock %}
 
 {% block content %}
-<h2>Login</h2>
-    <form action="{{ url_for('login') }}" method="POST">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br>
+<div class="d-flex justify-content-center">
+    <div class="login-container w-50">
+        <h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+        <form action="{{ url_for('login') }}" method="POST">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
 
-        <button type="submit">Login</button>
-    </form>
-    <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+            <button type="submit" class="btn-primary"><i class="fas fa-lock"></i> Login</button>
+        </form>
+        <p class="register-link">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    </div>
+</div>
 {% endblock %}
