@@ -224,7 +224,7 @@ input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focu
 
 
 
-a {
+a.link {
     color: #00796b;
     text-decoration: none;
     position: relative;
@@ -233,11 +233,11 @@ a {
 }
 
 
-a:hover {
+a.link:hover {
     color: #004d40;
 }
 
-a::after {
+a.link::after {
     content: '';
     display: block;
     width: 0;
@@ -250,7 +250,7 @@ a::after {
 }
 
 
-a:hover::after {
+a.link:hover::after {
     width: 100%;
 }
 
@@ -265,7 +265,7 @@ a:hover::after {
 }
 
 
-a:hover {
+a.link:hover {
     animation: bounce 0.3s ease;
     text-decoration: none;
 
