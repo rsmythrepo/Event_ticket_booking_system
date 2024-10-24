@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from __init__ import app, db
-from ORM.DBClasses import Event, Seat, Booking, TicketTier, EventTicketTier
+from ORM.DBClasses import Event, Seat, Booking, TicketTier, EventTicketTier, User
 
 bookings = []
 users = []
@@ -153,32 +155,116 @@ def confirm_payment(event_id):
     db.session.commit()
 
     # Redirect to the booking summary page
-    return redirect(url_for('booking_summary', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
+    return redirect(url_for('payment_confirmation', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
 
-@app.route('/booking_summary/<int:event_id>')
-def booking_summary(event_id):
+@app.route('/payment_confirmation/<int:event_id>')
+def payment_confirmation(event_id):
     event = Event.query.get(event_id)
     selected_seats = request.args.get('selected_seats')
     total_amount = request.args.get('total_amount')
 
     selected_seats_list = selected_seats.split(',')
 
-    return render_template('booking_summary.html', event=event, selected_seats=selected_seats_list, total_amount=total_amount)
+    return render_template('payment_confirmation.html', event=event, selected_seats=selected_seats_list, total_amount=total_amount)
 
 
 @app.route('/mybookings')
 def my_bookings():
-    user = "user123"  # Simulating a logged-in user
-    user_bookings = [b for b in bookings if b['user'] == user]
-    user_events = [e for e in events if e['id'] in [b['event_id'] for b in user_bookings]]
-    return render_template('booking_summary.html', bookings=user_bookings, events=user_events)
+    if 'user_id' not in session:
+        flash("Please log in to view your bookings.", "error")
+        return redirect(url_for('login'))
 
+    user_id = session['user_id']
+    user_bookings = Booking.query.filter_by(user_id=user_id).all()
+    event_ids = [booking.event_id for booking in user_bookings]
+    user_events = Event.query.filter(Event.event_id.in_(event_ids)).all()
+
+    return render_template('booking_summary.html', bookings=user_bookings, events=user_events)
 
 @app.route('/bookingmanagement')
 def booking_management():
     user = "user123"
     user_bookings = [b for b in bookings if b['user'] == user]
     return render_template('booking_management.html', bookings=user_bookings)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'user_id' in session:
+        return redirect(url_for('homepage'))
+    if request.method == 'POST':
+        print(request.form)
+        firstname = request.form['firstname']
+        lastname = request.form['lastname']
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+        existing_user = User.query.filter_by(username=username).first()
+        existing_email = User.query.filter_by(email=email).first()
+
+        if existing_user:
+            flash("Username already exists!", "error")
+            return redirect(url_for('register'))
+
+        if existing_email:
+            flash("Email already registered!", "error")
+            return redirect(url_for('register'))
+
+        if password != confirm_password:
+            flash("Passwords do not match!", "error")
+            return redirect(url_for('register'))
+        hashed_password = generate_password_hash(password)
+        new_user = User(
+            firstname=firstname,
+            secondname=lastname,
+            username=username,
+            email=email,
+            password_hash=hashed_password,
+            role_id=1
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash("Registration successful! You can now log in.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('register.html')
+
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if 'user_id' in session:
+        return redirect(url_for('homepage'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password_hash = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if not user or not check_password_hash(user.password_hash, password_hash):
+            flash("Invalid username or password!", "error")
+            return redirect(url_for('login'))
+        session['user_id'] = user.user_id
+        session['username'] = user.username
+
+        print(session['user_id'])
+        return redirect(url_for('homepage'))
+
+    return render_template('login.html')
+
+
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('username', None)
+    flash("You have been logged out.", "success")
+    return redirect(url_for('homepage'))
+
+
+
+
 
 
 def is_admin():

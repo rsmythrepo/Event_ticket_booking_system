@@ -3,24 +3,35 @@
 {% block title %}Booking Confirmation{% endblock %}
 
 {% block content %}
-<div id="confirmationSection">
-    <h1 style="text-align: center;">You're going to {{ event.title }}!</h1>
-    <p></p>
-    <p><strong>Event Date:</strong> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
-    <p><strong>Venue:</strong> {{ event.venue }}</p>
-    <p><strong>Seats:</strong>
-    <ul>
-        {% for seat in selected_seats %}
-            <li>Seat: {{ seat }}</li>
-        {% endfor %}
-    </ul>
+<h2>My Bookings</h2>
 
-    <h3>Total Amount Paid: ${{ total_amount }}</h3>
+{% if bookings %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Event Name</th>
+                <th>Date</th>
+                <th>Seats Booked</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+                {% set event = events[loop.index0] %}
+                <tr>
+                    <td>{{ event.name }}</td>
+                    <td>{{ event.start_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ booking.seats | length }}</td>
+                    <td>${{ booking.total_amount }}</td>
+                    <td>{{ booking.booking_status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You have no bookings yet.</p>
+{% endif %}
 
-    <p>Your tickets have been confirmed. You will receive a confirmation email with the details of your purchase shortly. (You wont yet but you will.. when we implement it :D)</p>
-
-    <a href="/" class="btn btn-primary">
-        Search for More Events
-    </a>
-</div>
+<a href="/" class="btn btn-primary">Return to Home</a>
 {% endblock %}
