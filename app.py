@@ -113,11 +113,16 @@ def book_event(event_id):
 
 @app.route('/mybookings')
 def my_bookings():
-    user = "user123"  # Simulating a logged-in user
-    user_bookings = [b for b in bookings if b['user'] == user]
-    user_events = [e for e in events if e['id'] in [b['event_id'] for b in user_bookings]]
-    return render_template('booking_summary.html', bookings=user_bookings, events=user_events)
+    if 'user_id' not in session:
+        flash("Please log in to view your bookings.", "error")
+        return redirect(url_for('login'))
 
+    user_id = session['user_id']
+    user_bookings = Booking.query.filter_by(user_id=user_id).all()
+    event_ids = [booking.event_id for booking in user_bookings]
+    user_events = Event.query.filter(Event.event_id.in_(event_ids)).all()
+
+    return render_template('booking_summary.html', bookings=user_bookings, events=user_events)
 
 @app.route('/bookingmanagement')
 def booking_management():
