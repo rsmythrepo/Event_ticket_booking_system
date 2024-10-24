@@ -128,12 +128,14 @@ def booking_management():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if 'user_id' in session:
+        return redirect(url_for('homepage'))
     if request.method == 'POST':
         print(request.form)
         firstname = request.form['firstname']
         lastname = request.form['lastname']
         username = request.form['username']
-        email = request.form['email']  # New email field
+        email = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         existing_user = User.query.filter_by(username=username).first()
@@ -173,17 +175,19 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'user_id' in session:
+        return redirect(url_for('homepage'))
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
+        password_hash = request.form['password']
         user = User.query.filter_by(username=username).first()
-        if not user or not check_password_hash(user.password, password):
+        if not user or not check_password_hash(user.password_hash, password_hash):
             flash("Invalid username or password!", "error")
             return redirect(url_for('login'))
-        session['user_id'] = user.id
+        session['user_id'] = user.user_id
         session['username'] = user.username
 
-        flash("Login successful!", "success")
+        print(session['user_id'])
         return redirect(url_for('homepage'))
 
     return render_template('login.html')
