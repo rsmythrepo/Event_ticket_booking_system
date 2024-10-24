@@ -1,15 +1,15 @@
 
 
 -- generated data for testing
-
+USE event_bookings;
 INSERT INTO role (role_name)
 VALUES ('admin'), ('user');
 
-INSERT INTO `user` (firstname, secondname, email, password_hash, role_id)
+INSERT INTO `user` (username, firstname, secondname, email, password_hash, role_id)
 VALUES
-('John', 'Doe', 'john.doe@example.com', 'hashed_password_1', 2),
-('Jane', 'Smith', 'jane.smith@example.com', 'hashed_password_2', 2),
-('Admin', 'User', 'admin@example.com', 'hashed_password_3', 1);
+('john.doe', 'John', 'Doe', 'john.doe@example.com', 'hashed_password_1', 2),
+('jane.smith', 'Jane', 'Smith', 'jane.smith@example.com', 'hashed_password_2', 2),
+('admin', 'Admin', 'User', 'admin@example.com', 'hashed_password_3', 1);
 
 INSERT INTO event (title, description, venue, start_date, end_date, total_tickets, available_tickets)
 VALUES

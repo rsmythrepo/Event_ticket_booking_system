@@ -1,3 +1,4 @@
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold text-uppercase" href="/">🎫 Event Booking System</a>
@@ -7,19 +8,39 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link px-3" href="/" aria-current="page">
+                        <i class="bi bi-house-door-fill"></i> Home
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/mybookings">My Bookings</a>
+                    <a class="nav-link px-3" href="/mybookings">
+                        <i class="bi bi-ticket-perforated"></i> My Bookings
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/bookingmanagement">Manage Bookings</a>
+                    <a class="nav-link px-3" href="/bookingmanagement">
+                        <i class="bi bi-clipboard-data"></i> Manage Bookings
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/profile">Profile</a>
+                    <a class="nav-link px-3" href="/profile">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
                 </li>
+                {% if 'user_id' in session %}
+                    <li class="nav-item px-3">
+                        <a class="nav-link" href="/logout">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item px-3">
+                        <a class="nav-link" href="/login">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>
 </nav>
-
