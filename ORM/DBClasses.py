@@ -53,8 +53,7 @@ class Booking(db.Model):
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     booking_date = db.Column(db.DateTime, default=db.func.current_timestamp())
     booking_status = db.Column(db.Enum('confirmed', 'cancelled'), default='confirmed')
-
-    seats = db.relationship('BookingSeat', backref='booking', lazy=True)
+    seats = db.relationship('Seat', secondary='booking_seat', backref=db.backref('bookings', lazy=True))
     tickets = db.relationship('Ticket', backref='booking', lazy=True)
 
 

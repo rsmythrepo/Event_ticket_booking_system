@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Update Booking for {{ event.title }}{% endblock %}
+
+{% block content %}
+<h2>Update Booking for {{ event.title }}</h2>
+<p>{{ event.start_date.strftime('%A, %d %B %Y, %H:%M') }}<br>{{ event.venue }}</p>
+<p>Description: {{ event.description }}</p>
+
+<form method="POST">
+    <h4>Select Your Seats</h4>
+    <div class="seat-selection">
+        <div class="stage">Stage</div>
+        <div class="seats">
+            {% for seat in available_seats %}
+                <input type="checkbox" id="seat_{{ seat.seat_id }}" name="selected_seats" value="{{ seat.seat_id }}">
+                <label for="seat_{{ seat.seat_id }}" class="seat {{ 'unavailable' if not seat.is_available else '' }}">
+                    {{ seat.seat_number }}
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="tier">Select Ticket Tier</label>
+        <select class="form-control" id="tier" name="tier_id">
+            {% for tier in ticket_tiers %}
+            <option value="{{ tier.tier_id }}">{{ tier.tier_name }} - ${{ tier.price }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Update Booking</button>
+    <a href="{{ url_for('booking_management') }}" class="btn btn-secondary">Cancel</a>
+</form>
+
+<style>
+    .seat-selection {
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stage {
+        width: 100%;
+        text-align: center;
+        background-color: yellow;
+        padding: 10px;
+        font-weight: bold;
+    }
+
+    .seats {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    .seat {
+        display: inline-block;
+        margin: 5px;
+        padding: 10px;
+        width: 40px;
+        height: 40px;
+        background-color: #ddd;
+        text-align: center;
+        line-height: 20px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .seat.unavailable {
+        background-color: #ccc;
+    }
+
+    input[type="checkbox"]:checked + .seat {
+        background-color: #5cb85c;
+        color: white;
+    }
+</style>
+{% endblock %}

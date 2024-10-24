@@ -1,28 +1,48 @@
 {% extends "base.html" %}
 
-{% block title %}Manage My Bookings{% endblock %}
+{% block title %}Manage Bookings{% endblock %}
 
 {% block content %}
-<h1>Manage My Bookings</h1>
+<h2>Manage My Bookings</h2>
 
 {% if bookings %}
-    <div class="list-group">
-        {% for booking in bookings %}
-            <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ booking['event_title'] }}</h5>
-                    <small>Booked on: {{ booking['date'] }}</small>
-                </div>
-                <p class="mb-1">Seats: {{ booking['seats'] }}</p>
-                <small>Status: {{ booking['status'] }}</small>
-                <div class="mt-2">
-                    <a href="/modifybooking/{{ booking['id'] }}" class="btn btn-warning btn-sm">Modify</a>
-                    <a href="/cancelbooking/{{ booking['id'] }}" class="btn btn-danger btn-sm">Cancel</a>
-                </div>
-            </a>
-        {% endfor %}
-    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Event Name</th>
+                <th>Date</th>
+                <th>Seats Booked</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for booking in bookings %}
+                {% set event = events[loop.index0] %}
+                <tr>
+                    <td>{{ event.title }}</td>
+                    <td>{{ event.start_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ booking.seats | length }}</td> <!-- Display updated number of seats -->
+                    <td>${{ booking.total_amount }}</td> <!-- Display updated total amount based on new tier -->
+                    <td>{{ booking.booking_status }}</td>
+                    <td>
+                        {% if booking.booking_status == 'confirmed' %}
+                        <form action="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" method="post" style="display:inline;">
+                            <button class="btn btn-danger" type="submit" style="padding: 10px 20px; font-size: 16px;">Cancel</button>
+                        </form>
+                        <a href="{{ url_for('update_booking', booking_id=booking.booking_id) }}" class="btn btn-warning" style="padding: 10px 20px; font-size: 16px;">Update</a>
+                        {% else %}
+                        <span class="text-muted">Canceled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% else %}
-    <p class="text-muted">You have no current bookings to manage.</p>
+    <p>You have no bookings to manage yet.</p>
 {% endif %}
+
+<a href="{{ url_for('homepage') }}" class="btn btn-primary">Return to Home</a>
 {% endblock %}

@@ -229,9 +229,82 @@ def my_bookings():
 
 @app.route('/bookingmanagement')
 def booking_management():
-    user = "user123"
-    user_bookings = [b for b in bookings if b['user'] == user]
-    return render_template('booking_management.html', bookings=user_bookings)
+    if 'user_id' not in session:
+        flash("Please log in to manage your bookings.", "error")
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    # Fetch bookings for the logged-in user
+    user_bookings = Booking.query.filter_by(user_id=user_id).all()
+    event_ids = [booking.event_id for booking in user_bookings]
+    user_events = Event.query.filter(Event.event_id.in_(event_ids)).all()
+
+    return render_template('booking_management.html', bookings=user_bookings, events=user_events)
+
+@app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
+def cancel_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking or booking.booking_status == 'cancelled':
+        flash("Booking not found or already canceled.", "error")
+        return redirect(url_for('booking_management'))
+
+    # Update booking status to cancelled
+    booking.booking_status = 'cancelled'
+    db.session.add(booking)
+
+    # Mark the seats as available again
+    for seat in booking.seats:
+        seat.is_available = True
+        db.session.add(seat)
+
+    # Update available tickets in the event
+    event = Event.query.get(booking.event_id)
+    event.available_tickets = Seat.query.filter_by(event_id=booking.event_id, is_available=True).count()
+    db.session.add(event)
+
+    db.session.commit()
+    flash("Booking has been canceled and seats are available for booking.", "success")
+
+    return redirect(url_for('booking_management'))
+
+@app.route('/update_booking/<int:booking_id>', methods=['GET', 'POST'])
+def update_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking:
+        flash("Booking not found!", "error")
+        return redirect(url_for('booking_management'))
+
+    event = Event.query.get(booking.event_id)
+    available_seats = Seat.query.filter_by(event_id=event.event_id, is_available=True).all()
+    ticket_tiers = TicketTier.query.join(EventTicketTier).filter_by(event_id=event.event_id).all()
+
+    if request.method == 'POST':
+        # Retrieve selected seats and ticket tier from the form
+        selected_seats = request.form.getlist('selected_seats')  # List of selected seat IDs
+        tier_id = request.form.get('tier_id')
+
+        # Mark previously booked seats as available
+        for seat in booking.seats:
+            seat.is_available = True
+            db.session.add(seat)
+
+        # Mark new selected seats as unavailable
+        new_seats = Seat.query.filter(Seat.seat_id.in_(selected_seats)).all()
+        for seat in new_seats:
+            seat.is_available = False
+            db.session.add(seat)
+
+        # Update the booking's seats
+        booking.seats = new_seats  # Update the booking with new seats
+        tier = TicketTier.query.get(tier_id)
+        booking.total_amount = len(selected_seats) * tier.price  # Recalculate total price
+
+        db.session.commit()  # Commit changes to the database
+
+        flash("Booking updated successfully!", "success")
+        return redirect(url_for('booking_management'))
+
+    return render_template('update_booking.html', booking=booking, event=event, available_seats=available_seats, ticket_tiers=ticket_tiers)
 
 
 @app.route('/register', methods=['GET', 'POST'])
