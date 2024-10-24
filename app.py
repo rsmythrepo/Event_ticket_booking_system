@@ -40,6 +40,10 @@ def homepage():
         # Fetch the filtered events, sorted by start date
         events = events_query.order_by(Event.start_date.asc()).all()
 
+        # Add a count of available seats for each event
+        for event in events:
+            event.available_tickets = Seat.query.filter_by(event_id=event.event_id, is_available=True).count()
+
     except Exception as e:
         flash(f"Error fetching events: {str(e)}", "error")
         events = []
@@ -66,7 +70,6 @@ def event_details(event_id):
     return render_template('event_details.html', event=event)
 
 
-
 @app.route('/event/<int:event_id>/seats')
 def show_event_seats(event_id):
     try:
@@ -77,37 +80,91 @@ def show_event_seats(event_id):
     except Exception as e:
         return f"Error: {e}"
 
-
-@app.route('/bookevent/<int:event_id>', methods=['GET', 'POST'])
-def book_event(event_id):
+@app.route('/payment/<int:event_id>', methods=['POST'])
+def payment(event_id):
     event = Event.query.get(event_id)
     if not event:
-        flash("Event not found!", "error")
-        return redirect(url_for('homepage'))
+        return "Event not found", 404
 
-    if request.method == 'POST':
-        user_id = 1
-        seat_count = int(request.form['seat_count'])
+    # Assuming you have a session with the logged-in user's ID
+    #user_id = session.get('user_id')
+    #user = User.query.get(user_id)
 
-        if event.available_tickets >= seat_count:
-            event.available_tickets -= seat_count
+    # Retrieve the selected seat numbers from the form
+    selected_seats = request.form.get('selected_seats')
+    if not selected_seats:
+        return "No seats selected", 400
 
-            booking = Booking(user_id=user_id, event_id=event_id, total_amount=seat_count * event.price_range[0])
-            db.session.add(booking)
-            db.session.commit()
+    # Convert the selected seats to a list (e.g., ['A3', 'A4'])
+    selected_seats_list = selected_seats.split(',')
 
-            available_seats = Seat.query.filter_by(event_id=event_id, is_available=True).limit(seat_count).all()
-            for seat in available_seats:
-                seat.is_available = False
-                db.session.commit()
+    # Retrieve the selected seats from the database based on seat_number and event_id
+    seats = Seat.query.filter(
+        Seat.seat_number.in_(selected_seats_list),
+        Seat.event_id == event_id,
+        Seat.is_available == True  # Ensure the seat is available
+    ).all()
 
-            flash("Booking successful!", "success")
-        else:
-            flash("Not enough seats available.", "error")
+    if not seats or len(seats) != len(selected_seats_list):
+        return "Selected seats not available", 400
 
-        return redirect(url_for('my_bookings'))
+    # Assuming each seat belongs to a certain ticket tier
+    total_amount = 0
+    for seat in seats:
+        # Retrieve the ticket tier for the event and calculate the price
+        tier = TicketTier.query.join(EventTicketTier).filter(EventTicketTier.event_id == event_id).first()
+        if tier:
+            total_amount += tier.price
 
-    return render_template('event_details.html', event=event)
+
+    # Render the payment page with event, seats, and total amount
+    return render_template('payment.html', event=event, seats=selected_seats_list, total_amount=total_amount)
+
+
+@app.route('/confirm_payment/<int:event_id>', methods=['POST'])
+def confirm_payment(event_id):
+    event = Event.query.get(event_id)
+    if not event:
+        return "Event not found", 404
+
+    # Retrieve form data from the payment page
+    cardholder_name = request.form.get('cardholder_name')
+    card_type = request.form.get('card_type')
+    card_number = request.form.get('card_number')
+    expiration_date = request.form.get('expiration_date')
+    billing_address = request.form.get('billing_address')
+    total_amount = request.form.get('total_amount')
+    selected_seats = request.form.get('selected_seats')
+
+    # Convert the selected seats to a list (e.g., ['A3', 'A4'])
+    selected_seats_list = selected_seats.split(',')
+    seats = Seat.query.filter(
+        Seat.seat_number.in_(selected_seats_list),
+        Seat.event_id == event_id,
+        Seat.is_available == True  # Ensure the seat is available
+    ).all()
+
+    # If payment is successful mark seats as unavailable
+    for seat in seats:
+        seat.is_available = False  # Mark seats as booked
+        db.session.add(seat)
+
+    # Save change of seat and payment
+    db.session.commit()
+
+    # Redirect to the booking summary page
+    return redirect(url_for('booking_summary', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
+
+@app.route('/booking_summary/<int:event_id>')
+def booking_summary(event_id):
+    event = Event.query.get(event_id)
+    selected_seats = request.args.get('selected_seats')
+    total_amount = request.args.get('total_amount')
+
+    selected_seats_list = selected_seats.split(',')
+
+    return render_template('booking_summary.html', event=event, selected_seats=selected_seats_list, total_amount=total_amount)
+
 
 @app.route('/mybookings')
 def my_bookings():

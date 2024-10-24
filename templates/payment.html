@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Payment{% endblock %}
+
+{% block content %}
+<div id="paymentSection">
+    <h1>Payment for {{ event.title }}</h1>
+
+    <h3>Event Details</h3>
+    <p><strong>Event Date:</strong> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
+    <p><strong>Venue:</strong> {{ event.venue }}</p>
+
+    <h3>Seats</h3>
+    <ul>
+        {% for seat in seats %}
+            <li>Seat: {{ seat }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Total Amount: ${{ total_amount }}</h3>
+
+    <h3>Payment Details</h3>
+
+    <!-- Payment form -->
+    <form action="{{ url_for('confirm_payment', event_id=event.event_id) }}" method="POST" id="paymentForm">
+        <div class="form-group">
+            <label for="cardholder_name">Cardholder Name:</label>
+            <input type="text" class="form-control" id="cardholder_name" name="cardholder_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="card_type">Card Type:</label>
+            <select class="form-control" id="card_type" name="card_type" required>
+                <option value="Visa">Visa</option>
+                <option value="MasterCard">MasterCard</option>
+                <option value="AmEx">American Express</option>
+                <option value="Discover">Discover</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="card_number">Card Number:</label>
+            <input type="text" class="form-control" id="card_number" name="card_number" pattern="[0-9]{16}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="expiration_date">Expiration Date:</label>
+            <input type="month" class="form-control" id="expiration_date" name="expiration_date" required>
+        </div>
+
+        <div class="form-group" style="padding-bottom:10px">
+            <label for="billing_address">Billing Address:</label>
+            <textarea class="form-control" id="billing_address" name="billing_address" required></textarea>
+        </div>
+
+        <input type="hidden" name="total_amount" value="{{ total_amount }}">
+        <input type="hidden" name="selected_seats" value="{{ seats | join(',') }}">
+
+        <div class="form-group" style="padding-bottom: 20px;">
+            <input type="checkbox" id="terms_conditions" name="terms_conditions" required>
+            <label for="terms_conditions">I agree to the <a href="/terms" target="_blank">Terms and Conditions</a></label>
+        </div>
+
+        <button type="submit" class="btn btn-success" id="payButton" disabled>
+            Pay ${{ total_amount }}
+        </button>
+    </form>
+</div>
+
+<script>
+// Enable the Pay button when the terms and conditions checkbox is checked
+document.getElementById('terms_conditions').addEventListener('change', function() {
+    var payButton = document.getElementById('payButton');
+    payButton.disabled = !this.checked;
+});
+</script>
+
+{% endblock %}

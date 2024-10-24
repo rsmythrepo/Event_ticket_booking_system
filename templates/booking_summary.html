@@ -1,14 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}My Bookings{% endblock %}
+{% block title %}Booking Confirmation{% endblock %}
 
 {% block content %}
-<h1>My Bookings</h1>
-<div class="list-group">
-    <a href="#" class="list-group-item list-group-item-action">
-        <h5 class="mb-1">Concert Event - October 25, 2024</h5>
-        <p class="mb-1">Madison Square Garden</p>
-        <small>Seats: A12, A13</small>
+<div id="confirmationSection">
+    <h1 style="text-align: center;">You're going to {{ event.title }}!</h1>
+    <p></p>
+    <p><strong>Event Date:</strong> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
+    <p><strong>Venue:</strong> {{ event.venue }}</p>
+    <p><strong>Seats:</strong>
+    <ul>
+        {% for seat in selected_seats %}
+            <li>Seat: {{ seat }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Total Amount Paid: ${{ total_amount }}</h3>
+
+    <p>Your tickets have been confirmed. You will receive a confirmation email with the details of your purchase shortly. (You wont yet but you will.. when we implement it :D)</p>
+
+    <a href="/" class="btn btn-primary">
+        Search for More Events
     </a>
 </div>
 {% endblock %}
