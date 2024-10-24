@@ -10,6 +10,7 @@ CREATE TABLE role (
 
 CREATE TABLE `user` (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
     firstname VARCHAR(50) NOT NULL,
     secondname VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
