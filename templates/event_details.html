@@ -20,16 +20,22 @@
         <div class="d-flex flex-wrap justify-content-center" id="seat-container">
             {% set cols = 7 %}
             {% set seat_count = event.seats|length %}
-            {% set rows = (seat_count // cols) + (1 if seat_count % cols > 0 else 0) %}  {# Calculate rows based on the number of available seats #}
+            {% set rows = (seat_count // cols) + (1 if seat_count % cols > 0 else 0) %}
 
             {% for row in range(rows) %}
                 <div class="seat-row">
                     {% for col in range(cols) %}
                         {% set seat_index = row * cols + col %}
                         {% if seat_index < seat_count %}
-                            {% set seat = event.seats[seat_index] %} {# Get the seat object #}
-                            <div class="seat" data-seat-id="{{ seat.seat_id }}" style="margin: 5px; cursor: pointer;" onclick="selectSeat(this)">
-                                <span></span>
+                            {% set seat = event.seats[seat_index] %}
+                            <!-- Grey out the seat if it's unavailable -->
+                            <div class="seat"
+                                 data-seat-number="{{ seat.seat_number }}"
+                                 style="margin: 5px; cursor: pointer;
+                                        {% if not seat.is_available %} cursor: not-allowed; opacity: 0.5; {% endif %}"
+                                 onclick="selectSeat(this)"
+                                 {% if not seat.is_available %} disabled {% endif %}>
+                                <span>{{ seat.seat_number }}</span>
                             </div>
                         {% else %}
                             <div class="seat" style="margin: 5px; cursor: not-allowed; opacity: 0.3;">
@@ -42,26 +48,37 @@
         </div>
     </div>
 
-
-    <a href="{{ url_for('book_event', event_id=event.event_id) }}" id="book-tickets" class="btn btn-primary mt-5" style="display: none;">Book Tickets</a>
+    <!-- Form to submit selected seats to the payment page -->
+    <form action="{{ url_for('payment', event_id=event.event_id) }}" method="POST" id="booking-form">
+        <input type="hidden" name="selected_seats" id="selected-seats-input">
+        <button type="submit" id="book-tickets" class="btn btn-primary mt-5" style="display: none;">Proceed to Payment</button>
+    </form>
 </div>
 
 <script>
     let selectedSeats = [];
 
     function selectSeat(seatElement) {
-        if (selectedSeats.includes(seatElement.getAttribute('data-seat-id'))) {
+        const seatNumber = seatElement.getAttribute('data-seat-number');
+        const seatInput = document.getElementById('selected-seats-input');
 
-            seatElement.style.backgroundColor = '';
-            selectedSeats = selectedSeats.filter(seat => seat !== seatElement.getAttribute('data-seat-id'));
-        } else {
-            seatElement.style.backgroundColor = 'lightgreen';
-            selectedSeats.push(seatElement.getAttribute('data-seat-id'));
+        if (seatElement.style.cursor === 'not-allowed') {
+            // Do not allow selection of unavailable seats
+            return;
         }
 
+        if (selectedSeats.includes(seatNumber)) {
+            seatElement.style.backgroundColor = '';
+            selectedSeats = selectedSeats.filter(seat => seat !== seatNumber);
+        } else {
+            seatElement.style.backgroundColor = 'lightgreen';
+            selectedSeats.push(seatNumber);
+        }
+
+        // Update the hidden input field with the selected seat numbers
+        seatInput.value = selectedSeats.join(',');
         document.getElementById('book-tickets').style.display = selectedSeats.length > 0 ? 'block' : 'none';
     }
 </script>
-
 
 {% endblock %}

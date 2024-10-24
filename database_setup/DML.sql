@@ -1,6 +1,6 @@
 
 
-
+-- generated data for testing
 USE event_bookings;
 INSERT INTO role (role_name)
 VALUES ('admin'), ('user');
