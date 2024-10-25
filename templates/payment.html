@@ -54,12 +54,12 @@
         <input type="hidden" name="total_amount" value="{{ total_amount }}">
         <input type="hidden" name="selected_seats" value="{{ seats | join(',') }}">
 
-        <!-- TODO - Raph
+        {% if session.get('user_id') %}
         <div class="form-group" style="padding-bottom: 20px;">
             <input type="checkbox" id="user_payment_details" name="user_payment_details">
             <label for="user_payment_details">Would you like to save your payment details to this account?</label>
         </div>
-        -->
+        {% endif %}
 
         <div class="form-group" style="padding-bottom: 20px;">
             <input type="checkbox" id="terms_conditions" name="terms_conditions" required>
