@@ -18,7 +18,7 @@
         </thead>
         <tbody>
             {% for booking in bookings %}
-                {% set event = events[loop.index0] %}
+                {% set event = events[booking.event_id] %}
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.start_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
