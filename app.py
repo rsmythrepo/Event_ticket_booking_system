@@ -3,6 +3,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
+from flask_mail import Mail, Message
+
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USERNAME'] = 'askhatabi@gmail.com'  # Replace with your email
+app.config['MAIL_PASSWORD'] = 'pyegxiaboyccgymm'  # Replace with your password or App Password
+app.config['MAIL_DEFAULT_SENDER'] = ('Booking System', 'askhatabi@gmail.com')  # The sender name and email
+
+# Initialize Mail
+mail = Mail(app)
 
 bookings = []
 users = []
@@ -243,8 +256,21 @@ def confirm_payment(event_id):
     # Save change of seat and payment
     db.session.commit()
 
+    # Step 7: Send confirmation email
+    send_booking_confirmation(user.email, new_booking, event)
+
     # Redirect to the booking summary page
     return redirect(url_for('payment_confirmation', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
+
+# Function to send booking confirmation email
+def send_booking_confirmation(user_email, booking, event):
+    msg = Message('Your Ticket Booking Confirmation', recipients=[user_email])
+    msg.body = f'Thank you for booking {event.title}.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Booked Seats: {len(booking.seats)}\n' \
+               f'Total Amount: ${booking.total_amount}\n' \
+               f'We hope you enjoy the event!'
+    mail.send(msg)
 
 @app.route('/payment_confirmation/<int:event_id>')
 @login_required
@@ -320,7 +346,19 @@ def cancel_booking(booking_id):
     db.session.commit()
     flash("Booking has been canceled and seats are available for booking.", "success")
 
+    # Send cancellation email to the user
+    send_cancellation_email(booking.user.email, booking, event)
+
     return redirect(url_for('booking_management'))
+
+def send_cancellation_email(user_email, booking, event):
+    msg = Message('Your Booking Has Been Canceled', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been canceled.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Canceled Seats: {len(booking.seats)}\n' \
+               f'If this was a mistake, please rebook your seats on the event page.\n' \
+               f'We hope to see you at another event!'
+    mail.send(msg)
 
 @app.route('/update_booking/<int:booking_id>', methods=['GET', 'POST'])
 @login_required
@@ -357,11 +395,21 @@ def update_booking(booking_id):
 
         db.session.commit()  # Commit changes to the database
 
+        # Send updated booking confirmation email
+        send_updated_booking_email(booking.user.email, booking, event)
+
         flash("Booking updated successfully!", "success")
         return redirect(url_for('booking_management'))
 
     return render_template('update_booking.html', booking=booking, event=event, available_seats=available_seats, ticket_tiers=ticket_tiers)
-
+def send_updated_booking_email(user_email, booking, event):
+    msg = Message('Your Updated Booking Information', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been updated.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Updated Seats: {len(booking.seats)}\n' \
+               f'New Total Amount: ${booking.total_amount}\n' \
+               f'We hope you enjoy the event!'
+    mail.send(msg)
 
 @app.route('/profile')
 @login_required
