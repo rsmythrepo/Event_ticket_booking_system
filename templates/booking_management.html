@@ -19,7 +19,7 @@
         </thead>
         <tbody>
             {% for booking in bookings %}
-                {% set event = events[loop.index0] %}
+                {% set event = events[booking.event_id] %}
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.start_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -28,9 +28,12 @@
                     <td>{{ booking.booking_status }}</td>
                     <td>
                         {% if booking.booking_status == 'confirmed' %}
-                        <form action="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" method="post" style="display:inline;">
-                            <button class="btn btn-danger" type="submit" style="padding: 10px 20px; font-size: 16px;">Cancel</button>
-                        </form>
+                        <!--
+                        #<form action="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" method="post" style="display:inline;">
+                        #    <button class="btn btn-danger" type="submit" style="padding: 10px 20px; font-size: 16px;">Cancel</button>
+                        #</form>
+                        -->
+                        <a href="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" class="btn btn-danger" style="padding: 10px 20px; font-size: 16px;">Cancel</a>
                         <a href="{{ url_for('update_booking', booking_id=booking.booking_id) }}" class="btn btn-warning" style="padding: 10px 20px; font-size: 16px;">Update</a>
                         {% else %}
                         <span class="text-muted">Canceled</span>

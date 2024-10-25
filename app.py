@@ -242,7 +242,10 @@ def booking_management():
     event_ids = [booking.event_id for booking in user_bookings]
     user_events = Event.query.filter(Event.event_id.in_(event_ids)).all()
 
-    return render_template('booking_management.html', bookings=user_bookings, events=user_events)
+    # Create a dictionary of events by their ID
+    event_dict = {event.event_id: event for event in user_events}
+
+    return render_template('booking_management.html', bookings=user_bookings, events=event_dict)
 
 @app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 def cancel_booking(booking_id):
