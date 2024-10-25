@@ -1,3 +1,4 @@
+
 import os
 import tempfile
 from io import BytesIO
@@ -7,14 +8,58 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from werkzeug.security import check_password_hash, generate_password_hash
 import qrcode
+from functools import wraps
+
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
+from flask_mail import Mail, Message
+
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465
+app.config['MAIL_USE_SSL'] = True
+app.config['MAIL_USE_TLS'] = False
+app.config['MAIL_USERNAME'] = 'askhatabi@gmail.com'  # Replace with your email
+app.config['MAIL_PASSWORD'] = 'pyegxiaboyccgymm'  # Replace with your password or App Password
+app.config['MAIL_DEFAULT_SENDER'] = ('Booking System', 'askhatabi@gmail.com')  # The sender name and email
+
+# Initialize Mail
+mail = Mail(app)
 
 bookings = []
 users = []
 admins = []
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:  # Check if user_id is in session
+            flash("Please log in to access this page.", "error")
+            return redirect(url_for('login'))  # Redirect to the login page if not logged in
+        return f(*args, **kwargs)
+    return decorated_function
+
+def luhn_check(card_number):
+    """Validate the credit card number using the Luhn algorithm."""
+    card_number = card_number.replace(" ", "")
+    if not card_number.isdigit():
+        return False
+
+    digits = [int(d) for d in card_number[::-1]]
+    total_sum = 0
+
+    for i, digit in enumerate(digits):
+        if i % 2 == 1:
+            doubled = digit * 2
+            if doubled > 9:
+                doubled -= 9
+            total_sum += doubled
+        else:
+            total_sum += digit
+    return total_sum % 10 == 0
+
 @app.route('/')
+@login_required
 def homepage():
     # Extract the query parameters for filtering
     price_from = request.args.get('price_from', type=int)  # Price Range From
@@ -62,6 +107,7 @@ def homepage():
 
 
 @app.route('/event/<int:event_id>')
+@login_required
 def event_details(event_id):
     try:
         # Fetch the event by ID
@@ -79,6 +125,7 @@ def event_details(event_id):
 
 
 @app.route('/event/<int:event_id>/seats')
+@login_required
 def show_event_seats(event_id):
     try:
         seats = Seat.query.filter_by(event_id=event_id, is_available=True).all()
@@ -89,6 +136,7 @@ def show_event_seats(event_id):
         return f"Error: {e}"
 
 @app.route('/payment/<int:event_id>', methods=['POST'])
+@login_required
 def payment(event_id):
     event = Event.query.get(event_id)
     if not event:
@@ -125,6 +173,7 @@ def payment(event_id):
 
 
 @app.route('/confirm_payment/<int:event_id>', methods=['POST'])
+@login_required
 def confirm_payment(event_id):
     event = Event.query.get(event_id)
     if not event:
@@ -137,7 +186,12 @@ def confirm_payment(event_id):
     billing_address = request.form.get('billing_address')
     total_amount = request.form.get('total_amount')
     selected_seats = request.form.get('selected_seats')
-    #save_payment_details = request.form.get('user_payment_details')
+    save_payment_details = request.form.get('user_payment_details')
+
+    """Luhn algorithm check for card validity - Cant actually use as we dont want to use card details"""
+    #if not luhn_check(card_number):
+    #    flash("Invalid card number", "error")
+    #    return redirect(url_for('payment', event_id=event_id))
 
     selected_seats_list = selected_seats.split(',')
     seats = Seat.query.filter(
@@ -147,7 +201,10 @@ def confirm_payment(event_id):
     ).all()
 
     user_id = session.get('user_id')
-    user = User.query.get(user_id)
+    if user_id:
+        user = User.query.get(user_id)
+    else:
+        user = None
 
     # Step 1: Create a new Booking
     new_booking = Booking(
@@ -180,22 +237,26 @@ def confirm_payment(event_id):
     db.session.add(event)
 
     # Step 5: Add Payment Details for the user
-    expiration_date_str = expiration_date + '-01'
-    payment_detail = PaymentDetail(
-        user_id=user.user_id,
-        card_type=card_type,
-        card_number=card_number,
-        cardholder_name=cardholder_name,
-        expiration_date=expiration_date_str,
-        billing_address=billing_address
-    )
-    db.session.add(payment_detail)
-    db.session.flush()
+    if save_payment_details:
+        expiration_date_str = expiration_date + '-01'
+        payment_detail = PaymentDetail(
+            user_id=user.user_id,
+            card_type=card_type,
+            card_number=card_number,
+            cardholder_name=cardholder_name,
+            expiration_date=expiration_date_str,
+            billing_address=billing_address
+        )
+        db.session.add(payment_detail)
+        db.session.flush()
+        payment_detail_id = payment_detail.payment_detail_id
+    else:
+        payment_detail_id = None
 
     # Step 6: Record the payment itself
     payment = Payment(
         booking_id=new_booking.booking_id,
-        payment_detail_id=payment_detail.payment_detail_id,
+        payment_detail_id=payment_detail_id,
         payment_amount=total_amount,
         payment_status='paid'  # Assuming the payment is successful
     )
@@ -204,10 +265,24 @@ def confirm_payment(event_id):
     # Save change of seat and payment
     db.session.commit()
 
+    # Step 7: Send confirmation email
+    send_booking_confirmation(user.email, new_booking, event)
+
     # Redirect to the booking summary page
     return redirect(url_for('payment_confirmation', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
 
+# Function to send booking confirmation email
+def send_booking_confirmation(user_email, booking, event):
+    msg = Message('Your Ticket Booking Confirmation', recipients=[user_email])
+    msg.body = f'Thank you for booking {event.title}.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Booked Seats: {len(booking.seats)}\n' \
+               f'Total Amount: ${booking.total_amount}\n' \
+               f'We hope you enjoy the event!'
+    mail.send(msg)
+
 @app.route('/payment_confirmation/<int:event_id>')
+@login_required
 def payment_confirmation(event_id):
     event = Event.query.get(event_id)
     selected_seats = request.args.get('selected_seats')
@@ -221,6 +296,7 @@ def payment_confirmation(event_id):
 
 
 @app.route('/mybookings')
+@login_required
 def my_bookings():
     if 'user_id' not in session:
         flash("Please log in to view your bookings.", "error")
@@ -237,6 +313,7 @@ def my_bookings():
     return render_template('booking_summary.html', bookings=user_bookings, events=event_dict)
 
 @app.route('/bookingmanagement')
+@login_required
 def booking_management():
     if 'user_id' not in session:
         flash("Please log in to manage your bookings.", "error")
@@ -254,6 +331,7 @@ def booking_management():
     return render_template('booking_management.html', bookings=user_bookings, events=event_dict)
 
 @app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
+@login_required
 def cancel_booking(booking_id):
     booking = Booking.query.get(booking_id)
     if not booking or booking.booking_status == 'cancelled':
@@ -277,9 +355,22 @@ def cancel_booking(booking_id):
     db.session.commit()
     flash("Booking has been canceled and seats are available for booking.", "success")
 
+    # Send cancellation email to the user
+    send_cancellation_email(booking.user.email, booking, event)
+
     return redirect(url_for('booking_management'))
 
+def send_cancellation_email(user_email, booking, event):
+    msg = Message('Your Booking Has Been Canceled', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been canceled.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Canceled Seats: {len(booking.seats)}\n' \
+               f'If this was a mistake, please rebook your seats on the event page.\n' \
+               f'We hope to see you at another event!'
+    mail.send(msg)
+
 @app.route('/update_booking/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
 def update_booking(booking_id):
     booking = Booking.query.get(booking_id)
     if not booking:
@@ -313,11 +404,35 @@ def update_booking(booking_id):
 
         db.session.commit()  # Commit changes to the database
 
+        # Send updated booking confirmation email
+        send_updated_booking_email(booking.user.email, booking, event)
+
         flash("Booking updated successfully!", "success")
         return redirect(url_for('booking_management'))
 
     return render_template('update_booking.html', booking=booking, event=event, available_seats=available_seats, ticket_tiers=ticket_tiers)
+def send_updated_booking_email(user_email, booking, event):
+    msg = Message('Your Updated Booking Information', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been updated.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Updated Seats: {len(booking.seats)}\n' \
+               f'New Total Amount: ${booking.total_amount}\n' \
+               f'We hope you enjoy the event!'
+    mail.send(msg)
 
+@app.route('/profile')
+@login_required
+def profile():
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('login'))
+
+    user = User.query.get(user_id)
+    payment_details = PaymentDetail.query.filter_by(user_id=user_id).all()
+
+    return render_template('profile.html', user=user, payment_details=payment_details)
 
 @app.route('/print_booking/<int:booking_id>')
 def print_booking(booking_id):
@@ -437,10 +552,6 @@ def logout():
     session.pop('username', None)
     flash("You have been logged out.", "success")
     return redirect(url_for('homepage'))
-
-
-
-
 
 
 def is_admin():
