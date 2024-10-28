@@ -1,9 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+
+import os
+import tempfile
+from io import BytesIO
+
+from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 from werkzeug.security import check_password_hash, generate_password_hash
+import qrcode
 from functools import wraps
+
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
+from flask import request, jsonify
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -126,6 +136,46 @@ def show_event_seats(event_id):
     except Exception as e:
         return f"Error: {e}"
 
+
+@app.route('/send_event_email/<int:event_id>', methods=['POST'])
+@login_required
+def send_event_email(event_id):
+    data = request.get_json()
+    friend_email = data.get('email')
+
+    # Fetch event details
+    event = Event.query.get(event_id)
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if not event:
+        return jsonify({"success": False, "message": "Event not found."}), 404
+
+    msg = Message(
+        subject=f"{event.title} - Event Details",
+        recipients=[friend_email]
+    )
+
+    msg.body = f"""
+    Hello, I wanted to share an event I thought you might be interested in. 
+
+    Here are the details for the event "{event.title}":
+
+    Date & Time: {event.start_date.strftime('%a, %d %B %Y, %H:%M')}
+    Venue: {event.venue}
+    Description: {event.description}
+
+    Let me know what you think!
+    {user.firstname}.
+    """
+    try:
+        mail.send(msg)
+        return jsonify({"success": True, "message": "Email sent successfully."}), 200
+    except Exception as e:
+        print("Error sending email:", e)
+        return jsonify({"success": False, "message": "Failed to send email."}), 500
+
+
 @app.route('/payment/<int:event_id>', methods=['POST'])
 @login_required
 def payment(event_id):
@@ -230,13 +280,16 @@ def confirm_payment(event_id):
     # Step 5: Add Payment Details for the user
     if save_payment_details:
         expiration_date_str = expiration_date + '-01'
+        # Update all other payment details for this user to not be default
+        PaymentDetail.query.filter_by(user_id=user.user_id).update({'default_payment': False})
         payment_detail = PaymentDetail(
             user_id=user.user_id,
             card_type=card_type,
             card_number=card_number,
             cardholder_name=cardholder_name,
             expiration_date=expiration_date_str,
-            billing_address=billing_address
+            billing_address=billing_address,
+            default_payment=True
         )
         db.session.add(payment_detail)
         db.session.flush()
@@ -424,6 +477,51 @@ def profile():
     payment_details = PaymentDetail.query.filter_by(user_id=user_id).all()
 
     return render_template('profile.html', user=user, payment_details=payment_details)
+
+@app.route('/print_booking/<int:booking_id>')
+def print_booking(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    event = Event.query.get_or_404(booking.event_id)
+    buffer = BytesIO()
+    qr_data = f"Booking ID: {booking.booking_id}, Event: {event.title}, Date: {event.start_date.strftime('%Y-%m-%d %H:%M:%S')}"
+    qr_img = qrcode.make(qr_data)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
+        qr_img.save(temp_file, format='PNG')
+        temp_file_path = temp_file.name
+    c = canvas.Canvas(buffer, pagesize=letter)
+    pdf_title = f"Booking Confirmation - {event.title} on {event.start_date.strftime('%Y-%m-%d')}"
+    c.setTitle(pdf_title)
+    width, height = letter
+    event_date = event.start_date.strftime('%Y-%m-%d %H:%M:%S')
+    title = f"{event.title} - {event_date}"
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(72, height - 72, title)
+    c.setFont("Helvetica", 12)
+    c.drawString(72, height - 100, f"Event: {event.title}")
+    c.drawString(72, height - 120, f"Date: {event_date}")
+    c.drawString(72, height - 140, f"Seats Booked: {len(booking.seats)}")
+    c.drawString(72, height - 160, f"Total Amount: ${booking.total_amount}")
+    c.drawString(72, height - 180, f"Status: {booking.booking_status}")
+    c.drawString(72, 320, "Please, see the QR code attached.")
+    c.drawImage(temp_file_path, 72, 100, width=200, height=200)
+    c.drawString(72, height - 250, "Thank you for booking with us!")
+    c.setFont("Helvetica-Oblique", 10)
+    year_text = "2024"
+    trademark_text = "Event Booking™"
+
+    year_text_width = c.stringWidth(year_text, "Helvetica-Oblique", 10)
+    trademark_text_width = c.stringWidth(trademark_text, "Helvetica-Oblique", 10)
+    c.drawString((width - year_text_width) / 2, 50, year_text)
+    c.drawString((width - trademark_text_width) / 2, 35, trademark_text)
+    c.showPage()
+    c.save()
+    os.remove(temp_file_path)
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=booking_{booking_id}.pdf'
+    return response
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

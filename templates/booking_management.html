@@ -27,14 +27,16 @@
                     <td>${{ booking.total_amount }}</td> <!-- Display updated total amount based on new tier -->
                     <td>{{ booking.booking_status }}</td>
                     <td>
-                        {% if booking.booking_status == 'confirmed' %}
+                       {% if booking.booking_status == 'confirmed' %}
+                            <form action="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" method="post" style="display: inline-block;">
+                                <button class="btn btn-danger" type="submit">Cancel</button>
+                            </form>
+                            <a href="{{ url_for('update_booking', booking_id=booking.booking_id) }}" class="btn btn-warning" style="display: inline-block">Update</a>
 
-                        <form action="{{ url_for('cancel_booking', booking_id=booking.booking_id) }}" method="post" style="display: inline-block;">
-                            <button class="btn btn-danger" type="submit" >Cancel</button>
-                        </form>
-                        <a href="{{ url_for('update_booking', booking_id=booking.booking_id) }}" class="btn btn-warning" style="display: inline-block">Update</a>
+                            <!-- Print Button -->
+                            <a href="{{ url_for('print_booking', booking_id=booking.booking_id) }}" target="_blank" class="btn btn-secondary" style="display: inline-block;">Print</a>
                         {% else %}
-                        <span class="text-muted">Canceled</span>
+                            <span class="text-muted">Canceled</span>
                         {% endif %}
                     </td>
                 </tr>

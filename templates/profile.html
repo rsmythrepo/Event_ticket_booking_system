@@ -25,6 +25,7 @@
                     <th>Card Type</th>
                     <th>Card Number</th>
                     <th>Billing Address</th>
+                    <th>Default Payment</th>
                 </tr>
                 {% for payment in payment_details %}
                 <tr>
@@ -32,6 +33,9 @@
                     <td>{{ payment.card_type }}</td>
                     <td>..{{ payment.card_number[-4:] | safe }}</td> <!-- Masked card number -->
                     <td>{{ payment.billing_address }}</td>
+                    <td>
+                        <input type="checkbox" {% if payment.default_payment %}checked{% endif %} disabled> <!-- Checkbox for default payment -->
+                    </td>
                 </tr>
                 {% endfor %}
             </table>
