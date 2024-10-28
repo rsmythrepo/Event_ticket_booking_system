@@ -5,6 +5,11 @@
 {% block content %}
 
 <div class="container mt-4">
+    <div class="d-flex justify-content-end mb-3">
+        <input type="email" id="friend-email" class="form-control mr-2" placeholder="Friend's Email" style="width: 300px;">
+        <button onclick="sendEventToFriend()" class="btn btn-secondary" style="width: 80px; height: 50px;">Share</button>
+    </div>
+
     <h1 class="text-center">{{ event.title }}</h1>
     <p class="text-center"> {{ event.start_date.strftime('%a, %d %B %Y, %H:%M') }}</p>
     <p class="text-center"> {{ event.venue }}</p>
@@ -79,6 +84,35 @@
         seatInput.value = selectedSeats.join(',');
         document.getElementById('book-tickets').style.display = selectedSeats.length > 0 ? 'block' : 'none';
     }
+    function sendEventToFriend() {
+        const friendEmail = document.getElementById('friend-email').value;
+
+        if (!friendEmail) {
+            alert("Please enter your friend's email address.");
+            return;
+        }
+
+        fetch(`{{ url_for('send_event_email', event_id=event.event_id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email: friendEmail })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Event details sent successfully!");
+            } else {
+                alert("Failed to send the email. Please try again.");
+            }
+        })
+        .catch(error => {
+            console.error("Error sending email:", error);
+            alert("An error occurred. Please try again.");
+        });
+    }
+
 </script>
 
 {% endblock %}
