@@ -71,164 +71,123 @@
         <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
 <script>
 const ticketSalesCtx = document.getElementById('ticketSalesChart').getContext('2d');
-    const ticketSalesGradient = ticketSalesCtx.createLinearGradient(0, 0, 0, 400);
-    ticketSalesGradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-    ticketSalesGradient.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
+const ticketSalesGradient = ticketSalesCtx.createLinearGradient(0, 0, 0, 400);
+ticketSalesGradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+ticketSalesGradient.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
 
-    const ticketSalesChart = new Chart(ticketSalesCtx, {
-        type: 'line',
-        data: {
-            labels: {{ tickets_sold_chart_labels | tojson | safe }},
-            datasets: [{
-                label: 'Tickets Sold',
-                data: {{ tickets_sold_chart_data | tojson | safe }},
-                backgroundColor: ticketSalesGradient,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(54, 162, 235, 0.8)',
-                    borderWidth: 1,
-                    titleFont: {
-                        family: "'Arial', sans-serif",
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        family: "'Arial', sans-serif",
-                        size: 12
-                    }
+const ticketSalesChart = new Chart(ticketSalesCtx, {
+    type: 'line',
+    data: {
+        labels: {{ tickets_sold_chart_labels | tojson | safe }},
+        datasets: [{
+            label: 'Tickets Sold',
+            data: {{ tickets_sold_chart_data | tojson | safe }},
+            backgroundColor: ticketSalesGradient,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                labels: {
+                    color: '#333'
                 }
             },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {
-                            size: 12,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'rgba(54, 162, 235, 0.8)',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false
                 },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.3)',
-                        borderDash: [5, 5]
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {
-                            size: 12,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
+                ticks: {
+                    color: '#666'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(200, 200, 200, 0.3)',
+                    borderDash: [5, 5]
+                },
+                ticks: {
+                    color: '#666'
                 }
             }
         }
-    });
-    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-    const gradientRevenue = ctxRevenue.createLinearGradient(0, 0, 0, 400);
-    gradientRevenue.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
-    gradientRevenue.addColorStop(1, 'rgba(255, 159, 64, 0.3)');
+    }
+});
 
-    const revenueChart = new Chart(ctxRevenue, {
-        type: 'line',
-        data: {
-            labels: {{ revenue_chart_labels | tojson | safe }},
-            datasets: [{
-                label: 'Revenue Generated',
-                data: {{ revenue_chart_data | tojson | safe }},
-                backgroundColor: gradientRevenue,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5,
-                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(255, 99, 132, 0.8)',
-                    borderWidth: 1,
-                    titleFont: {
-                        family: "'Arial', sans-serif",
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        family: "'Arial', sans-serif",
-                        size: 12
-                    }
+const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+const gradientRevenue = ctxRevenue.createLinearGradient(0, 0, 0, 400);
+gradientRevenue.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
+gradientRevenue.addColorStop(1, 'rgba(255, 159, 64, 0.3)');
+
+const revenueChart = new Chart(ctxRevenue, {
+    type: 'line',
+    data: {
+        labels: {{ revenue_chart_labels | tojson | safe }},
+        datasets: [{
+            label: 'Revenue Generated',
+            data: {{ revenue_chart_data | tojson | safe }},
+            backgroundColor: gradientRevenue,
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
+                labels: {
+                    color: '#333'
                 }
             },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {
-                            size: 12,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: 'rgba(255, 99, 132, 0.8)',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false
                 },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.3)',
-                        borderDash: [5, 5]
-                    },
-                    ticks: {
-                        color: '#666',
-                        font: {
-                            size: 12,
-                            family: "'Arial', sans-serif",
-                        }
-                    }
+                ticks: {
+                    color: '#666'
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(200, 200, 200, 0.3)',
+                    borderDash: [5, 5]
+                },
+                ticks: {
+                    color: '#666'
                 }
             }
         }
-    });
+    }
+});
 </script>
 {% endblock %}
