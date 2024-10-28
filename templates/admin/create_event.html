@@ -30,20 +30,23 @@
         <label for="end_date" class="form-label">End Date</label>
         <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
     </div>
-
+<!--
     <div class="mb-3">
         <label for="total_tickets" class="form-label">Total Tickets</label>
-        <input type="number" class="form-control" id="total_tickets" name="total_tickets" required>
+        <input type="number" class="form-control" id="total_tickets" name="total_tickets" required onchange="validateTotalSeats()">
     </div>
-
+-->
     <div id="ticketTiers">
         <label class="form-label">Ticket Tiers</label>
         <div class="row mb-2 tier-input">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <input type="text" class="form-control" name="ticket_tiers[]" placeholder="Tier Name (e.g., VIP)" required>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
                 <input type="number" class="form-control" name="tier_prices[]" placeholder="Price (e.g., 100)" step="0.01" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" required>
             </div>
             <div class="col-md-2">
                 <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
@@ -62,11 +65,14 @@ function addTier() {
     tierContainer.classList.add('row', 'mb-2', 'tier-input');
 
     tierContainer.innerHTML = `
-        <div class="col-md-5">
+        <div class="col-md-4">
             <input type="text" class="form-control" name="ticket_tiers[]" placeholder="Tier Name (e.g., VIP)" required>
         </div>
-        <div class="col-md-5">
+        <div class="col-md-3">
             <input type="number" class="form-control" name="tier_prices[]" placeholder="Price" step="0.01" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" min="1" required>
         </div>
         <div class="col-md-2">
             <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>

@@ -64,7 +64,7 @@ class Seat(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'), nullable=False)
     seat_number = db.Column(db.String(10), nullable=False)
     is_available = db.Column(db.Boolean, default=True)
-
+    tier_id = db.Column(db.Integer, db.ForeignKey('ticket_tier.tier_id'), nullable=True)
     booking_seats = db.relationship('BookingSeat', backref='seat', lazy=True)
 
 
