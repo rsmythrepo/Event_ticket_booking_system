@@ -13,6 +13,7 @@ from functools import wraps
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
+from flask import request, jsonify
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -134,6 +135,46 @@ def show_event_seats(event_id):
         return render_template('seats.html', seats=seats)
     except Exception as e:
         return f"Error: {e}"
+
+
+@app.route('/send_event_email/<int:event_id>', methods=['POST'])
+@login_required
+def send_event_email(event_id):
+    data = request.get_json()
+    friend_email = data.get('email')
+
+    # Fetch event details
+    event = Event.query.get(event_id)
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if not event:
+        return jsonify({"success": False, "message": "Event not found."}), 404
+
+    msg = Message(
+        subject=f"{event.title} - Event Details",
+        recipients=[friend_email]
+    )
+
+    msg.body = f"""
+    Hello, I wanted to share an event I thought you might be interested in. 
+
+    Here are the details for the event "{event.title}":
+
+    Date & Time: {event.start_date.strftime('%a, %d %B %Y, %H:%M')}
+    Venue: {event.venue}
+    Description: {event.description}
+
+    Let me know what you think!
+    {user.firstname}.
+    """
+    try:
+        mail.send(msg)
+        return jsonify({"success": True, "message": "Email sent successfully."}), 200
+    except Exception as e:
+        print("Error sending email:", e)
+        return jsonify({"success": False, "message": "Failed to send email."}), 500
+
 
 @app.route('/payment/<int:event_id>', methods=['POST'])
 @login_required
