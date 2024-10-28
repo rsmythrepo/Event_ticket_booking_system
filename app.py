@@ -1,11 +1,13 @@
 
 import os
 import tempfile
+from datetime import datetime, timedelta
 from io import BytesIO
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 import qrcode
 from functools import wraps
@@ -581,14 +583,92 @@ def admin_events():
     return render_template('admin/admin_event_management.html', events=events)
 
 
-@app.route('/admin/salesreport')
+@app.route('/admin/salesreport', methods=['GET', 'POST'])
 def sales_report():
     if not is_admin():
         flash("Unauthorized access!", "error")
         return redirect(url_for('homepage'))
-    total_tickets_sold = sum([event['seats'] - event['available_seats'] for event in events])
-    total_revenue = sum([(event['seats'] - event['available_seats']) * event['price_range'][0] for event in events])
-    return render_template('admin/admin_sales_report.html', total_tickets_sold=total_tickets_sold, total_revenue=total_revenue)
+
+    # Get the timeframe from form submission or default to '30days'
+    timeframe = request.args.get('timeframe', '30days')
+
+    # Determine the date range based on the selected timeframe
+    if timeframe == '7days':
+        start_date = datetime.now() - timedelta(days=7)
+    elif timeframe == '30days':
+        start_date = datetime.now() - timedelta(days=30)
+    elif timeframe == '1year':
+        start_date = datetime.now() - timedelta(days=365)
+    else:
+        start_date = datetime.now() - timedelta(days=30)  # Default to 30 days if invalid
+
+    # Fetching total tickets sold
+    total_tickets_sold = db.session.query(
+        func.sum(Event.total_tickets - Event.available_tickets)
+    ).scalar() or 0  # Default to 0 if no tickets sold
+
+    # Calculate total revenue from sold tickets
+    total_revenue = db.session.query(
+        func.sum(TicketTier.price * (Event.total_tickets - Event.available_tickets))
+    ).select_from(Event).join(Ticket).join(TicketTier).scalar() or 0  # Default to 0 if no revenue
+
+    # Fetching event statistics for display
+    events = db.session.query(
+        Event.title,
+        (Event.total_tickets - Event.available_tickets).label('tickets_sold'),
+        func.sum(TicketTier.price * (Event.total_tickets - Event.available_tickets)).label('revenue')
+    ).select_from(Event).outerjoin(Ticket).join(TicketTier).group_by(Event.event_id).all()
+
+    # Prepare events data for chart
+    event_data = []
+    for event in events:
+        event_data.append({
+            'title': event.title,
+            'tickets_sold': event.tickets_sold,
+            'revenue': event.revenue or 0  # Default to 0 if no revenue
+        })
+
+    # Fetch ticket sales data for the selected timeframe using booking_date
+    ticket_sales = (
+        db.session.query(
+            func.date(Booking.booking_date).label('sale_date'),  # Use the booking_date field
+            func.count(Ticket.ticket_id).label('tickets_sold')  # Count of tickets sold
+        )
+        .join(Ticket, Ticket.booking_id == Booking.booking_id)  # Join on booking
+        .filter(Booking.booking_date >= start_date)  # Filtering on booking_date
+        .group_by(func.date(Booking.booking_date))
+        .order_by(func.date(Booking.booking_date))  # Order by date for chart consistency
+        .all()
+    )
+
+    # Prepare the data for the ticket sales chart
+    sales_data = {}
+    for sale in ticket_sales:
+        sales_data[sale.sale_date.strftime('%Y-%m-%d')] = sale.tickets_sold
+
+    # Create labels and data for the ticket sales chart
+    labels = sorted(sales_data.keys())
+    tickets_sold_data = [sales_data[label] for label in labels]
+
+    # Fetch revenue data for the selected timeframe
+    revenue_data = db.session.query(
+        func.date(Booking.booking_date).label('date'),
+        func.sum(TicketTier.price).label('revenue')
+    ).select_from(Booking).join(Ticket).join(TicketTier).filter(Booking.booking_date >= start_date).group_by('date').order_by('date').all()
+
+    # Prepare the data for the revenue chart
+    revenue_chart_labels = [data.date.strftime('%Y-%m-%d') for data in revenue_data]
+    revenue_chart_data = [data.revenue for data in revenue_data]
+
+    return render_template('admin/admin_sales_report.html',
+                           selected_timeframe=timeframe,
+                           total_tickets_sold=total_tickets_sold,
+                           total_revenue=total_revenue,
+                           events=events,
+                           tickets_sold_chart_labels=labels,
+                           tickets_sold_chart_data=tickets_sold_data,
+                           revenue_chart_labels=revenue_chart_labels,
+                           revenue_chart_data=revenue_chart_data)
 
 
 @app.route('/admin/logout')
