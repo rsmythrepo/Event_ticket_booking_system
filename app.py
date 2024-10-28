@@ -630,59 +630,47 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from flask import jsonify
 
+
 @app.route('/admin/event_sales/<int:event_id>', methods=['GET'])
 def event_sales(event_id):
-    # Set start_date to one month ago from today
-    start_date = datetime.now() - timedelta(days=30)  # Get the date from 30 days ago
-    end_date = datetime.now()  # Today's date
-
-    # Create a date range for the last month
+    start_date = datetime.now() - timedelta(days=30)
+    end_date = datetime.now()
     date_range = [(start_date + timedelta(days=i)).date() for i in range((end_date - start_date).days + 1)]
-
-    # Query for ticket sales and revenue for the specified event for the last month
     ticket_sales = (
         db.session.query(
             func.date(Booking.booking_date).label('sale_date'),
-            func.count(Ticket.ticket_id).label('tickets_sold'),  # Count tickets sold
-            func.sum(Booking.total_amount).label('revenue')  # Total revenue from the Booking table
+            func.count(Ticket.ticket_id).label('tickets_sold'),
+            func.sum(Booking.total_amount).label('revenue')
         )
-        .join(Ticket, Ticket.booking_id == Booking.booking_id)  # Join Booking with Ticket
+        .join(Ticket, Ticket.booking_id == Booking.booking_id)
         .filter(
-            Booking.booking_date >= start_date,  # Filter by booking date for the last month
-            Booking.event_id == event_id  # Filter by event ID
+            Booking.booking_date >= start_date,
+            Ticket.event_id == event_id
         )
-        .group_by(func.date(Booking.booking_date))  # Group by date
-        .order_by(func.date(Booking.booking_date))  # Order by date
+        .group_by(func.date(Booking.booking_date))
+        .order_by(func.date(Booking.booking_date))
         .all()
     )
-
-    # Prepare sales data in a dictionary for easy lookup
+    print("Fetched Ticket Sales Data:")
+    for sale in ticket_sales:
+        print(f"Sale Date: {sale.sale_date}, Tickets Sold: {sale.tickets_sold}, Revenue: {sale.revenue}")
     sales_data = {sale.sale_date: {'tickets_sold': sale.tickets_sold, 'revenue': sale.revenue} for sale in ticket_sales}
-
-    # Prepare data for response including all dates in the date range
     labels = []
     ticket_sales_data = []
     revenue_data = []
-
     for date in date_range:
         labels.append(date.strftime('%Y-%m-%d'))
         if date in sales_data:
             ticket_sales_data.append(sales_data[date]['tickets_sold'])
             revenue_data.append(sales_data[date]['revenue'])
         else:
-            ticket_sales_data.append(0)  # No sales
-            revenue_data.append(0)  # No revenue
-
-    # Log the sales data for debugging
-    print("Ticket Sales Data:", sales_data)
-
-    # Return the sales data as JSON
+            ticket_sales_data.append(0)
+            revenue_data.append(0)
     return jsonify({
         'ticket_sales_labels': labels,
         'ticket_sales_data': ticket_sales_data,
         'revenue_data': revenue_data
     })
-
 
 
 @app.route('/admin/salesreport', methods=['GET', 'POST'])
@@ -708,13 +696,10 @@ def sales_report():
         Booking.booking_date >= start_date
     ).scalar() or 0
 
-    # Total revenue from confirmed bookings
     total_revenue = db.session.query(func.sum(Booking.total_amount)).filter(
         Booking.booking_status == 'confirmed',
         Booking.booking_date >= start_date
     ).scalar() or 0
-
-    # Revenue and tickets sold per event
     events = db.session.query(
         Event.event_id,
         Event.title,
@@ -730,23 +715,18 @@ def sales_report():
 
     event_data = []
     for event in events:
-        # Daily sales for each event
         ticket_sales = db.session.query(
             func.date(Booking.booking_date).label('sale_date'),
-            func.count(BookingSeat.seat_id).label('tickets_sold'),  # Count the number of seats booked
-            func.sum(Booking.total_amount).label('revenue')  # Sum total amount for revenue
-        ).join(BookingSeat, BookingSeat.booking_id == Booking.booking_id).filter(  # Ensure we join to get seats
+            func.count(BookingSeat.seat_id).label('tickets_sold'),
+            func.sum(Booking.total_amount).label('revenue')
+        ).join(BookingSeat, BookingSeat.booking_id == Booking.booking_id).filter(
             Booking.booking_status == 'confirmed',
             Booking.booking_date >= start_date,
             Booking.event_id == event.event_id
         ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
-
-        # Prepare data for the event
         labels = [sale.sale_date.strftime('%Y-%m-%d') for sale in ticket_sales]
         ticket_sales_data = [sale.tickets_sold for sale in ticket_sales]
         revenue_data = [sale.revenue for sale in ticket_sales]
-
-        # Calculate total tickets sold and total revenue for the event
         total_tickets_sold_ev = sum(ticket_sales_data)
         total_revenue_ev = sum(revenue_data)
 
@@ -759,33 +739,25 @@ def sales_report():
             'revenue_data': revenue_data,
         })
 
-    # Query for ticket sales and revenue combined from the Booking table
     ticket_sales = db.session.query(
-        func.date(Booking.booking_date).label('sale_date'),  # Date from Booking table
+        func.date(Booking.booking_date).label('sale_date'),
         func.count(BookingSeat.seat_id).label('tickets_sold'),
-        func.sum(Booking.total_amount).label('total_revenue')  # Include revenue from Booking table
+        func.sum(Booking.total_amount).label('total_revenue')
     ).outerjoin(BookingSeat, BookingSeat.booking_id == Booking.booking_id).filter(
         Booking.booking_status == 'confirmed',
         Booking.booking_date >= start_date
     ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
-
-    # Prepare sales data
     sales_data = {
         sale.sale_date.strftime('%Y-%m-%d'): {
             'tickets_sold': sale.tickets_sold,
             'total_revenue': sale.total_revenue
         } for sale in ticket_sales
     }
-
-    # Extract labels and corresponding data
     labels = sorted(sales_data.keys())
     tickets_sold_data = [sales_data[label]['tickets_sold'] for label in labels]
     revenue_data = [sales_data[label]['total_revenue'] for label in labels]
-
-    # Print ticket sales data for debugging
     print(sales_data)
 
-    # Return to the template with updated revenue data using ticket_sales
     return render_template('admin/admin_sales_report.html',
                            selected_timeframe=timeframe,
                            total_tickets_sold=total_tickets_sold,
@@ -793,8 +765,8 @@ def sales_report():
                            events=event_data,
                            tickets_sold_chart_labels=labels,
                            tickets_sold_chart_data=tickets_sold_data,
-                           revenue_chart_labels=labels,  # Use the same labels
-                           revenue_chart_data=revenue_data)  # Use the revenue data from ticket_sales
+                           revenue_chart_labels=labels,
+                           revenue_chart_data=revenue_data)
 
 
 @app.route('/admin/logout')

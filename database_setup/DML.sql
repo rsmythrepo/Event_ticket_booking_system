@@ -61,53 +61,30 @@ VALUES
 (3, 'C7', TRUE),
 (3, 'C8', TRUE);
 
-INSERT INTO booking (user_id, event_id, total_amount, booking_date, booking_status)
+INSERT INTO booking (user_id, event_id, total_amount, booking_status)
 VALUES
-(1, 1, 150.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed'),
-(2, 2, 75.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed'),
-(1, 3, 100.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed'),
-(2, 1, 150.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed'),
-(1, 2, 225.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed'),
-(2, 3, 300.00, CURDATE() - INTERVAL FLOOR(1 + (RAND() * 30)) DAY, 'confirmed');
+(1, 1, 150.00, 'confirmed'),
+(2, 2, 75.00, 'confirmed');
 
 INSERT INTO booking_seat (seat_id, booking_id)
 VALUES
-(1, 2),
-(2, 3),
-(3, 4),
-(4, 5),
-(5, 6),
-(6, 7),
-(7, 8),
-(8, 9),
-(9, 10),
-(10, 11),
-(11, 12),
-(12, 13),
-(13, 14),
-(14, 15),
-(15, 16),
-(16, 17),
-(17, 18);
-
+(1, 1),
+(4, 2);
 
 INSERT INTO ticket (booking_id, event_id, seat_id, tier_id)
 VALUES
-(3, 1, 1, 1),
-(4, 2, 2, 2),
-(5, 3, 3, 3),
-(6, 1, 4, 1),
-(7, 2, 5, 2),
-(8, 3, 6, 3);
-INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
-VALUES
-(1, 'Visa', '4111111111111111', 'John Doe', '2025-08-31', '123 Main St, City, Country'),
-(2, 'MasterCard', '5555555555554444', 'Jane Smith', '2025-10-15', '456 Elm St, City, Country');
+(1, 1, 1, 1),
+(2, 2, 4, 2);
 
-INSERT INTO payment (booking_id, payment_detail_id, payment_amount, payment_status)
-VALUES
-(1, 1, 150.00, 'paid'),
-(2, 2, 75.00, 'paid');
+--INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
+--VALUES
+--(1, 'Visa', '4111111111111111', 'John Doe', '2025-08-31', '123 Main St, City, Country'),
+--(2, 'MasterCard', '5555555555554444', 'Jane Smith', '2025-10-15', '456 Elm St, City, Country');
+
+--INSERT INTO payment (booking_id, payment_detail_id, payment_amount, payment_status)
+--VALUES
+--(1, 1, 150.00, 'paid'),
+--(2, 2, 75.00, 'paid');
 
 INSERT INTO notification (user_id, event_id, message, notification_type, status)
 VALUES
@@ -126,5 +103,4 @@ SET available_tickets = available_tickets - (
     FROM ticket
     WHERE ticket.event_id = event.event_id
 );
-
 
