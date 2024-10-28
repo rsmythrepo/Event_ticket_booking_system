@@ -106,6 +106,7 @@ CREATE TABLE payment_detail (
     cardholder_name VARCHAR(100) NOT NULL,
     expiration_date DATE NOT NULL,
     billing_address TEXT NOT NULL,
+    default_payment BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES `user`(user_id)
 );
 

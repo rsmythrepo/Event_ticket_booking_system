@@ -76,15 +76,15 @@ VALUES
 (1, 1, 1, 1),
 (2, 2, 4, 2);
 
-INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
-VALUES
-(1, 'Visa', '4111111111111111', 'John Doe', '2025-08-31', '123 Main St, City, Country'),
-(2, 'MasterCard', '5555555555554444', 'Jane Smith', '2025-10-15', '456 Elm St, City, Country');
+--INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
+--VALUES
+--(1, 'Visa', '4111111111111111', 'John Doe', '2025-08-31', '123 Main St, City, Country'),
+--(2, 'MasterCard', '5555555555554444', 'Jane Smith', '2025-10-15', '456 Elm St, City, Country');
 
-INSERT INTO payment (booking_id, payment_detail_id, payment_amount, payment_status)
-VALUES
-(1, 1, 150.00, 'paid'),
-(2, 2, 75.00, 'paid');
+--INSERT INTO payment (booking_id, payment_detail_id, payment_amount, payment_status)
+--VALUES
+--(1, 1, 150.00, 'paid'),
+--(2, 2, 75.00, 'paid');
 
 INSERT INTO notification (user_id, event_id, message, notification_type, status)
 VALUES
