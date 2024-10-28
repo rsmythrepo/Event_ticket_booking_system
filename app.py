@@ -623,7 +623,36 @@ def admin_events():
         return redirect(url_for('homepage'))
     return render_template('admin/admin_event_management.html', events=events)
 
+@app.route('/admin/event_sales/<int:event_id>', methods=['GET'])
+def event_sales(event_id):
+    timeframe = request.args.get('timeframe', '30days')
+    start_date = datetime.now() - timedelta(days=30)  # Default to 30 days if not specified
+    if timeframe == '7days':
+        start_date = datetime.now() - timedelta(days=7)
+    elif timeframe == '1year':
+        start_date = datetime.now() - timedelta(days=365)
 
+    ticket_sales = (
+        db.session.query(
+            func.date(Booking.booking_date).label('sale_date'),
+            func.count(Ticket.ticket_id).label('tickets_sold'),
+            func.sum(TicketTier.price).label('revenue')
+        )
+        .join(Ticket, Ticket.booking_id == Booking.booking_id)
+        .filter(Booking.booking_date >= start_date, Event.event_id == event_id)
+        .group_by(func.date(Booking.booking_date))
+        .order_by(func.date(Booking.booking_date))
+        .all()
+    )
+    labels = [sale.sale_date.strftime('%Y-%m-%d') for sale in ticket_sales] if ticket_sales else []
+    ticket_sales_data = [sale.tickets_sold for sale in ticket_sales]
+    revenue_data = [sale.revenue for sale in ticket_sales]
+
+    return jsonify({
+        'ticket_sales_labels': labels,
+        'ticket_sales_data': ticket_sales_data,
+        'revenue_data': revenue_data
+    })
 @app.route('/admin/salesreport', methods=['GET', 'POST'])
 def sales_report():
     if not is_admin():
@@ -646,10 +675,10 @@ def sales_report():
     ).scalar() or 0
 
     total_revenue = db.session.query(
-        func.sum(TicketTier.price * (Event.total_tickets - Event.available_tickets))
-    ).select_from(Event).join(Ticket).join(TicketTier).scalar() or 0
-
+        func.sum(Booking.total_amount)
+    ).filter(Booking.booking_status == 'confirmed').scalar() or 0
     events = db.session.query(
+        Event.event_id,
         Event.title,
         (Event.total_tickets - Event.available_tickets).label('tickets_sold'),
         func.sum(TicketTier.price * (Event.total_tickets - Event.available_tickets)).label('revenue')
@@ -657,11 +686,31 @@ def sales_report():
 
     event_data = []
     for event in events:
+        ticket_sales = (
+            db.session.query(
+                func.date(Booking.booking_date).label('sale_date'),
+                func.count(Ticket.ticket_id).label('tickets_sold'),
+                func.sum(TicketTier.price).label('revenue')
+            )
+            .join(Ticket, Ticket.booking_id == Booking.booking_id)
+            .filter(Booking.booking_date >= start_date, Event.event_id == event.event_id)
+            .group_by(func.date(Booking.booking_date))
+            .order_by(func.date(Booking.booking_date))
+            .all()
+        )
+        labels = [sale.sale_date.strftime('%Y-%m-%d') for sale in ticket_sales] if ticket_sales else []
+        ticket_sales_data = [sale.tickets_sold for sale in ticket_sales]
+        revenue_data = [sale.revenue for sale in ticket_sales]
+
         event_data.append({
             'title': event.title,
             'tickets_sold': event.tickets_sold,
-            'revenue': event.revenue or 0
+            'revenue': event.revenue or 0,
+            'ticket_sales_labels': labels,
+            'ticket_sales_data': ticket_sales_data,
+            'revenue_data': revenue_data,
         })
+
 
     ticket_sales = (
         db.session.query(
@@ -689,12 +738,19 @@ def sales_report():
 
     revenue_chart_labels = [data.date.strftime('%Y-%m-%d') for data in revenue_data]
     revenue_chart_data = [data.revenue for data in revenue_data]
+    print("Total Tickets Sold:", total_tickets_sold)
+    print("Total Revenue:", total_revenue)
+    print("Event Data:", event_data)
+    print("Labels:", labels)
+    print("Tickets Sold Data:", tickets_sold_data)
+    print("Revenue Chart Labels:", revenue_chart_labels)
+    print("Revenue Chart Data:", revenue_chart_data)
 
     return render_template('admin/admin_sales_report.html',
                            selected_timeframe=timeframe,
                            total_tickets_sold=total_tickets_sold,
                            total_revenue=total_revenue,
-                           events=events,
+                           events=event_data,
                            tickets_sold_chart_labels=labels,
                            tickets_sold_chart_data=tickets_sold_data,
                            revenue_chart_labels=revenue_chart_labels,
