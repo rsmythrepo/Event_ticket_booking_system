@@ -13,6 +13,7 @@ from functools import wraps
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
+from flask import request, jsonify
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -135,6 +136,46 @@ def show_event_seats(event_id):
     except Exception as e:
         return f"Error: {e}"
 
+
+@app.route('/send_event_email/<int:event_id>', methods=['POST'])
+@login_required
+def send_event_email(event_id):
+    data = request.get_json()
+    friend_email = data.get('email')
+
+    # Fetch event details
+    event = Event.query.get(event_id)
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if not event:
+        return jsonify({"success": False, "message": "Event not found."}), 404
+
+    msg = Message(
+        subject=f"{event.title} - Event Details",
+        recipients=[friend_email]
+    )
+
+    msg.body = f"""
+    Hello, I wanted to share an event I thought you might be interested in. 
+
+    Here are the details for the event "{event.title}":
+
+    Date & Time: {event.start_date.strftime('%a, %d %B %Y, %H:%M')}
+    Venue: {event.venue}
+    Description: {event.description}
+
+    Let me know what you think!
+    {user.firstname}.
+    """
+    try:
+        mail.send(msg)
+        return jsonify({"success": True, "message": "Email sent successfully."}), 200
+    except Exception as e:
+        print("Error sending email:", e)
+        return jsonify({"success": False, "message": "Failed to send email."}), 500
+
+
 @app.route('/payment/<int:event_id>', methods=['POST'])
 @login_required
 def payment(event_id):
@@ -239,13 +280,16 @@ def confirm_payment(event_id):
     # Step 5: Add Payment Details for the user
     if save_payment_details:
         expiration_date_str = expiration_date + '-01'
+        # Update all other payment details for this user to not be default
+        PaymentDetail.query.filter_by(user_id=user.user_id).update({'default_payment': False})
         payment_detail = PaymentDetail(
             user_id=user.user_id,
             card_type=card_type,
             card_number=card_number,
             cardholder_name=cardholder_name,
             expiration_date=expiration_date_str,
-            billing_address=billing_address
+            billing_address=billing_address,
+            default_payment=True
         )
         db.session.add(payment_detail)
         db.session.flush()
