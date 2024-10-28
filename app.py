@@ -94,7 +94,8 @@ def homepage():
             events_query = events_query.filter(Event.venue.in_(selected_venues))
 
         # Fetch the filtered events, sorted by start date
-        events = events_query.order_by(Event.start_date.asc()).all()
+        #events = events_query.order_by(Event.start_date.asc()).all()
+        events = db.session.query(Event).order_by(Event.start_date.asc()).all()
 
         # Add a count of available seats for each event
         for event in events:
@@ -624,6 +625,10 @@ def admin_events():
     if not is_admin():
         flash("Unauthorized access!", "error")
         return redirect(url_for('homepage'))
+
+    # Query all events from the Event table
+    events = Event.query.order_by(Event.start_date.asc()).all()
+
     return render_template('admin/admin_event_management.html', events=events)
 
 from datetime import datetime, timedelta
@@ -768,6 +773,70 @@ def sales_report():
                            revenue_chart_labels=labels,
                            revenue_chart_data=revenue_data)
 
+@app.route('/admin/events/new', methods=['GET', 'POST'])
+def create_event():
+    if request.method == 'POST':
+        # Capture event details from the form
+        title = request.form.get('title')
+        description = request.form.get('description')
+        venue = request.form.get('venue')
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        total_tickets = int(request.form.get('total_tickets'))
+
+        # Capture ticket tiers and prices
+        ticket_tiers = request.form.getlist('ticket_tiers[]')
+        tier_prices = request.form.getlist('tier_prices[]')
+
+        try:
+            # Step 1: Create the new event
+            new_event = Event(
+                title=title,
+                description=description,
+                venue=venue,
+                start_date=start_date,
+                end_date=end_date,
+                total_tickets=total_tickets,
+                available_tickets=total_tickets
+            )
+            db.session.add(new_event)
+            db.session.flush()  # Flush to get the event_id for the next operations
+
+            # Step 2: Create seats for the event
+            seats = []
+            for i in range(1, total_tickets + 1):
+                seat_number = f"{chr(64 + (i - 1) // 10 + 1)}{i % 10 if i % 10 != 0 else 10}"  # Generate seat numbers like A1, A2, etc.
+                seat = Seat(event_id=new_event.event_id, seat_number=seat_number, is_available=True)
+                seats.append(seat)
+            db.session.bulk_save_objects(seats)
+
+            # Step 3: Define ticket tiers and associate with the event
+            for tier_name, tier_price in zip(ticket_tiers, tier_prices):
+                # Create or find the ticket tier
+                ticket_tier = TicketTier.query.filter_by(tier_name=tier_name).first()
+                if not ticket_tier:
+                    ticket_tier = TicketTier(tier_name=tier_name, price=tier_price)
+                    db.session.add(ticket_tier)
+                    db.session.flush()  # Get tier_id
+
+                # Link the ticket tier to the event with available ticket count
+                event_ticket_tier = EventTicketTier(
+                    event_id=new_event.event_id,
+                    tier_id=ticket_tier.tier_id,
+                    total_tickets=total_tickets
+                )
+                db.session.add(event_ticket_tier)
+
+            # Commit all changes
+            db.session.commit()
+            flash("Event created successfully!", "success")
+            return redirect(url_for('admin_events'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error creating event: {str(e)}", "error")
+
+    return render_template('admin/create_event.html')
 
 @app.route('/admin/logout')
 def admin_logout():
