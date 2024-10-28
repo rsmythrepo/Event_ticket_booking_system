@@ -44,5 +44,5 @@
 
 .chart-container {
     flex: 1; /* Allows the chart containers to grow equally */
-    min-width: 300px; /* Ensures charts do not shrink too small */
+    min-width: 700px; /* Ensures charts do not shrink too small */
 }
