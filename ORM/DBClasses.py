@@ -125,6 +125,7 @@ class PaymentDetail(db.Model):
     cardholder_name = db.Column(db.String(100), nullable=False)
     expiration_date = db.Column(db.Date, nullable=False)
     billing_address = db.Column(db.Text, nullable=False)
+    default_payment = db.Column(db.Boolean, default=False)
 
 
 class Payment(db.Model):

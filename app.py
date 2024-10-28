@@ -280,13 +280,16 @@ def confirm_payment(event_id):
     # Step 5: Add Payment Details for the user
     if save_payment_details:
         expiration_date_str = expiration_date + '-01'
+        # Update all other payment details for this user to not be default
+        PaymentDetail.query.filter_by(user_id=user.user_id).update({'default_payment': False})
         payment_detail = PaymentDetail(
             user_id=user.user_id,
             card_type=card_type,
             card_number=card_number,
             cardholder_name=cardholder_name,
             expiration_date=expiration_date_str,
-            billing_address=billing_address
+            billing_address=billing_address,
+            default_payment=True
         )
         db.session.add(payment_detail)
         db.session.flush()
