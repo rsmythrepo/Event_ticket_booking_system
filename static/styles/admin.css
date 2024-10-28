@@ -40,9 +40,10 @@
     justify-content: space-between; /* Adjusts spacing between charts */
     align-items: flex-start; /* Aligns charts to the top */
     gap: 20px; /* Optional: adds space between the charts */
+    padding:0 15px;
 }
 
 .chart-container {
-    flex: 1; /* Allows the chart containers to grow equally */
-    min-width: 700px; /* Ensures charts do not shrink too small */
+    flex: 1;
 }
+
