@@ -61,20 +61,36 @@ VALUES
 (3, 'C7', TRUE),
 (3, 'C8', TRUE);
 
-INSERT INTO booking (user_id, event_id, total_amount, booking_status)
+INSERT INTO booking (user_id, event_id, total_amount, booking_date, booking_status)
 VALUES
-(1, 1, 150.00, 'confirmed'),
-(2, 2, 75.00, 'confirmed');
+(1, 1, 300.00, '2024-10-14', 'confirmed'),
+(1, 1, 150.00, '2024-10-5', 'confirmed'),
+(2, 1, 225.00, '2024-10-21', 'confirmed'),
+(1, 2, 75.00, '2024-10-24', 'confirmed'),
+(2, 2, 150.00, '2024-10-22', 'confirmed'),
+(3, 3, 225.00, '2024-10-01', 'confirmed'),
+(1, 3, 375.00, '2024-10-02', 'confirmed'),
+(2, 3, 75.00, '2024-10-04', 'confirmed');
 
 INSERT INTO booking_seat (seat_id, booking_id)
 VALUES
-(1, 1),
-(4, 2);
+(2, 3), (3, 3), (4, 3),
+(5, 4),
+(6, 5), (7, 5), (8, 5),
+(11, 6),
+(12, 7), (13, 7),
+(16, 8), (17, 8), (18, 8),
+(19, 9), (20, 9), (21, 9), (22, 9);
 
 INSERT INTO ticket (booking_id, event_id, seat_id, tier_id)
 VALUES
-(1, 1, 1, 1),
-(2, 2, 4, 2);
+(3, 1, 2, 2), (3, 1, 3, 2), (3, 1, 4, 1),
+(4, 1, 5, 1),
+(5, 1, 6, 3), (5, 1, 7, 3), (5, 1, 8, 2),
+(6, 2, 11, 2),
+(7, 2, 12, 1), (7, 2, 13, 1),
+(8, 3, 16, 3), (8, 3, 17, 2), (8, 3, 18, 2),
+(9, 3, 19, 1), (9, 3, 20, 2), (9, 3, 21, 3), (9, 3, 22, 2);
 
 --INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
 --VALUES

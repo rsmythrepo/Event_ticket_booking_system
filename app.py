@@ -64,6 +64,7 @@ def luhn_check(card_number):
 @app.route('/')
 @login_required
 def homepage():
+    now = datetime.now()
     # Extract the query parameters for filtering
     price_from = request.args.get('price_from', type=int)  # Price Range From
     price_until = request.args.get('price_until', type=int)  # Price Range Until
@@ -74,15 +75,21 @@ def homepage():
         # Fetch all unique venues for the venue filter
         venues = [v.venue for v in db.session.query(Event.venue).distinct()]
 
-        # Start with a base query for events, joining event_ticket_tier and ticket_tier for price filtering
-        events_query = db.session.query(Event).join(EventTicketTier).join(TicketTier)
+        # Start base query filtering by booking open and close times
+        events_query = db.session.query(Event).filter(
+            Event.booking_open_time <= now,
+            Event.booking_close_time >= now
+        )
 
-        # Apply price range filter if both values are provided
+        # Apply additional filters for price, date, and venue if provided
         if price_from is not None and price_until is not None:
+            events_query = events_query.join(EventTicketTier).join(TicketTier)
             events_query = events_query.filter(TicketTier.price >= price_from, TicketTier.price <= price_until)
         elif price_from is not None:
+            events_query = events_query.join(EventTicketTier).join(TicketTier)
             events_query = events_query.filter(TicketTier.price >= price_from)
         elif price_until is not None:
+            events_query = events_query.join(EventTicketTier).join(TicketTier)
             events_query = events_query.filter(TicketTier.price <= price_until)
 
         # Apply date filter if selected
@@ -94,8 +101,8 @@ def homepage():
             events_query = events_query.filter(Event.venue.in_(selected_venues))
 
         # Fetch the filtered events, sorted by start date
-        #events = events_query.order_by(Event.start_date.asc()).all()
-        events = db.session.query(Event).order_by(Event.start_date.asc()).all()
+        events = events_query.order_by(Event.start_date.asc()).all()
+        #events = db.session.query(Event).order_by(Event.start_date.asc()).all()
 
         # Add a count of available seats for each event
         for event in events:
@@ -398,6 +405,10 @@ def cancel_booking(booking_id):
     event = Event.query.get(booking.event_id)
     event.available_tickets = Seat.query.filter_by(event_id=booking.event_id, is_available=True).count()
     db.session.add(event)
+
+    # Extend booking close time if tickets are now available
+    if event.available_tickets > 0:
+        event.booking_close_time = max(event.booking_close_time, datetime.now() + timedelta(days=1))
 
     db.session.commit()
     flash("Booking has been canceled and seats are available for booking.", "success")
@@ -723,15 +734,22 @@ def sales_report():
         ticket_sales = db.session.query(
             func.date(Booking.booking_date).label('sale_date'),
             func.count(BookingSeat.seat_id).label('tickets_sold'),
-            func.sum(Booking.total_amount).label('revenue')
         ).join(BookingSeat, BookingSeat.booking_id == Booking.booking_id).filter(
+            Booking.booking_status == 'confirmed',
+            Booking.booking_date >= start_date,
+            Booking.event_id == event.event_id
+        ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
+        revenue = db.session.query(
+            func.date(Booking.booking_date).label('sale_date'),
+            func.sum(Booking.total_amount).label('revenue')
+        ).filter(
             Booking.booking_status == 'confirmed',
             Booking.booking_date >= start_date,
             Booking.event_id == event.event_id
         ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
         labels = [sale.sale_date.strftime('%Y-%m-%d') for sale in ticket_sales]
         ticket_sales_data = [sale.tickets_sold for sale in ticket_sales]
-        revenue_data = [sale.revenue for sale in ticket_sales]
+        revenue_data = [rev.revenue for rev in revenue]
         total_tickets_sold_ev = sum(ticket_sales_data)
         total_revenue_ev = sum(revenue_data)
 
@@ -776,12 +794,21 @@ def sales_report():
 @app.route('/admin/events/new', methods=['GET', 'POST'])
 def create_event():
     if request.method == 'POST':
-
         title = request.form.get('title')
         description = request.form.get('description')
         venue = request.form.get('venue')
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
+
+        # Get booking open and close times from the form
+        booking_open_time = request.form.get('booking_open_time')
+        booking_close_time = request.form.get('booking_close_time')
+
+        # Ensure datetime fields are parsed correctly
+        start_date = datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
+        end_date = datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
+        booking_open_time = datetime.strptime(booking_open_time, '%Y-%m-%dT%H:%M')
+        booking_close_time = datetime.strptime(booking_close_time, '%Y-%m-%dT%H:%M')
 
         ticket_tiers = request.form.getlist('ticket_tiers[]')
         tier_prices = request.form.getlist('tier_prices[]')
@@ -803,7 +830,9 @@ def create_event():
                 start_date=start_date,
                 end_date=end_date,
                 total_tickets=total_tickets,
-                available_tickets=total_tickets
+                available_tickets=total_tickets,
+                booking_open_time=booking_open_time,
+                booking_close_time=booking_close_time
             )
             db.session.add(new_event)
             db.session.flush()
