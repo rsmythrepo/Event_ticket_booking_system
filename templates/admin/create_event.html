@@ -30,12 +30,7 @@
         <label for="end_date" class="form-label">End Date</label>
         <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
     </div>
-<!--
-    <div class="mb-3">
-        <label for="total_tickets" class="form-label">Total Tickets</label>
-        <input type="number" class="form-control" id="total_tickets" name="total_tickets" required onchange="validateTotalSeats()">
-    </div>
--->
+
     <div id="ticketTiers">
         <label class="form-label">Ticket Tiers</label>
         <div class="row mb-2 tier-input">
@@ -55,9 +50,14 @@
     </div>
 
     <button type="button" class="btn btn-secondary mb-3" onclick="addTier()">Add Another Tier</button>
-
-    <button type="submit" class="btn btn-primary">Create Event</button>
 </form>
+
+<div class="text-end">
+    <button type="submit" class="btn btn-primary">Create Event</button>
+</div>
+
+<div class="text-end" style="padding bottom:40px">
+</div>
 
 <script>
 function addTier() {

@@ -169,7 +169,7 @@ def send_event_email(event_id):
     Description: {event.description}
 
     Let me know what you think!
-    {user.firstname}.
+    "{user.firstname}".
     """
     try:
         mail.send(msg)
