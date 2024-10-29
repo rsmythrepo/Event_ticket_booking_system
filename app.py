@@ -723,15 +723,22 @@ def sales_report():
         ticket_sales = db.session.query(
             func.date(Booking.booking_date).label('sale_date'),
             func.count(BookingSeat.seat_id).label('tickets_sold'),
-            func.sum(Booking.total_amount).label('revenue')
         ).join(BookingSeat, BookingSeat.booking_id == Booking.booking_id).filter(
+            Booking.booking_status == 'confirmed',
+            Booking.booking_date >= start_date,
+            Booking.event_id == event.event_id
+        ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
+        revenue = db.session.query(
+            func.date(Booking.booking_date).label('sale_date'),
+            func.sum(Booking.total_amount).label('revenue')
+        ).filter(
             Booking.booking_status == 'confirmed',
             Booking.booking_date >= start_date,
             Booking.event_id == event.event_id
         ).group_by(func.date(Booking.booking_date)).order_by(func.date(Booking.booking_date)).all()
         labels = [sale.sale_date.strftime('%Y-%m-%d') for sale in ticket_sales]
         ticket_sales_data = [sale.tickets_sold for sale in ticket_sales]
-        revenue_data = [sale.revenue for sale in ticket_sales]
+        revenue_data = [rev.revenue for rev in revenue]
         total_tickets_sold_ev = sum(ticket_sales_data)
         total_revenue_ev = sum(revenue_data)
 
