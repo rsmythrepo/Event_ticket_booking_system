@@ -61,6 +61,17 @@ def luhn_check(card_number):
             total_sum += digit
     return total_sum % 10 == 0
 
+def validate_expiry_date(expiry_date):
+    """Check if the expiry date is valid and not in the past."""
+    try:
+        exp_month, exp_year = map(int, expiry_date.split('/'))
+        exp_date = datetime(exp_year, exp_month, 1)
+        current_date = datetime.now()
+        return exp_date >= current_date.replace(day=1)
+    except ValueError:
+        return False
+
+
 @app.route('/')
 @login_required
 def homepage():
@@ -102,7 +113,7 @@ def homepage():
 
         # Fetch the filtered events, sorted by start date
         events = events_query.order_by(Event.start_date.asc()).all()
-        #events = db.session.query(Event).order_by(Event.start_date.asc()).all()
+        # events = db.session.query(Event).order_by(Event.start_date.asc()).all()
 
         # Add a count of available seats for each event
         for event in events:
@@ -193,6 +204,11 @@ def payment(event_id):
     if not event:
         return "Event not found", 404
 
+    user_id = session.get('user_id')
+    default_payment_detail = None
+    if user_id:
+        default_payment_detail = PaymentDetail.query.filter_by(user_id=user_id, default_payment=True).first()
+
     # Retrieve the selected seat numbers from the form
     selected_seats = request.form.get('selected_seats')
     if not selected_seats:
@@ -220,16 +236,19 @@ def payment(event_id):
             total_amount += tier.price
 
     # Render the payment page with event, seats, and total amount
-    return render_template('payment.html', event=event, seats=selected_seats_list, total_amount=total_amount)
+    return render_template('payment.html', event=event, seats=selected_seats_list, total_amount=total_amount, default_payment_detail=default_payment_detail)
 
 
 @app.route('/confirm_payment/<int:event_id>', methods=['POST'])
 @login_required
 def confirm_payment(event_id):
-    event = Event.query.get(event_id)
+    event = db.session.get(Event, event_id)
     if not event:
         return "Event not found", 404
 
+    use_saved_details = request.form.get('use_saved_details')
+
+    # card details are default if default is checked preloaded
     cardholder_name = request.form.get('cardholder_name')
     card_type = request.form.get('card_type')
     card_number = request.form.get('card_number')
@@ -239,9 +258,14 @@ def confirm_payment(event_id):
     selected_seats = request.form.get('selected_seats')
     save_payment_details = request.form.get('user_payment_details')
 
-    """Luhn algorithm check for card validity - Cant actually use as we dont want to use card details"""
+    # Check credit card number
     #if not luhn_check(card_number):
-    #    flash("Invalid card number", "error")
+    #    flash("Invalid credit card number.", "error")
+    #    return redirect(url_for('payment', event_id=event_id))
+
+    # Check expiry date
+    #if not expiration_date or not validate_expiry_date(expiration_date):
+    #    flash("Invalid or expired credit card expiry date.", "error")
     #    return redirect(url_for('payment', event_id=event_id))
 
     selected_seats_list = selected_seats.split(',')
@@ -307,6 +331,20 @@ def confirm_payment(event_id):
     else:
         payment_detail_id = None
 
+    if use_saved_details:
+        # Retrieve saved default payment details
+        payment_detail = PaymentDetail.query.filter_by(user_id=user.user_id, default_payment=True).first()
+        print("payment_detail",payment_detail)
+        if not payment_detail:
+            flash("No saved payment details found.", "error")
+            return redirect(url_for('payment', event_id=event_id))
+        else:
+            payment_detail_id = payment_detail.payment_detail_id
+    else:
+        print("used saved not checked")
+
+    print("payment id", payment_detail_id)
+
     # Step 6: Record the payment itself
     payment = Payment(
         booking_id=new_booking.booking_id,
@@ -324,6 +362,7 @@ def confirm_payment(event_id):
 
     # Redirect to the booking summary page
     return redirect(url_for('payment_confirmation', event_id=event.event_id, selected_seats=selected_seats, total_amount=total_amount))
+
 
 # Function to send booking confirmation email
 def send_booking_confirmation(user_email, booking, event):

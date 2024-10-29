@@ -19,46 +19,58 @@
 
     <h3>Payment Details</h3>
 
+    <!-- Toggle to use saved payment details if available -->
+    {% if default_payment_detail %}
+    <div class="form-group">
+        <input type="checkbox" id="use_saved_details" name="use_saved_details" checked onchange="togglePaymentFields(this)">
+        <label for="use_saved_details">Use saved payment details</label>
+    </div>
+    {% endif %}
+
     <!-- Payment form -->
     <form action="{{ url_for('confirm_payment', event_id=event.event_id) }}" method="POST" id="paymentForm">
-        <div class="form-group">
-            <label for="cardholder_name">Cardholder Name:</label>
-            <input type="text" class="form-control" id="cardholder_name" name="cardholder_name" required>
-        </div>
+        <div id="paymentFields" style="{% if default_payment_detail %}display: none;{% endif %}">
+            <div class="form-group">
+                <label for="cardholder_name">Cardholder Name:</label>
+                <input type="text" class="form-control" id="cardholder_name" name="cardholder_name"
+                       value="{{ default_payment_detail.cardholder_name if default_payment_detail else '' }}" required>
+            </div>
 
-        <div class="form-group">
-            <label for="card_type">Card Type:</label>
-            <select class="form-control" id="card_type" name="card_type" required>
-                <option value="Visa">Visa</option>
-                <option value="MasterCard">MasterCard</option>
-                <option value="AmEx">American Express</option>
-                <option value="Discover">Discover</option>
-            </select>
-        </div>
+            <div class="form-group">
+                <label for="card_type">Card Type:</label>
+                <select class="form-control" id="card_type" name="card_type" required>
+                    {% for card in ['Visa', 'MasterCard', 'AmEx', 'Discover'] %}
+                        <option value="{{ card }}" {% if default_payment_detail and default_payment_detail.card_type == card %}selected{% endif %}>{{ card }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label for="card_number">Card Number:</label>
-            <input type="text" class="form-control" id="card_number" name="card_number" pattern="[0-9]{16}" required>
-        </div>
+            <div class="form-group">
+                <label for="card_number">Card Number:</label>
+                <input type="text" class="form-control" id="card_number" name="card_number" pattern="[0-9]{16}"
+                       value="{{ default_payment_detail.card_number if default_payment_detail else '' }}" required>
+            </div>
 
-        <div class="form-group">
-            <label for="expiration_date">Expiration Date:</label>
-            <input type="month" class="form-control" id="expiration_date" name="expiration_date" required>
-        </div>
+            <div class="form-group">
+                <label for="expiration_date">Expiration Date:</label>
+                <input type="month" class="form-control" id="expiration_date" name="expiration_date"
+                       value="{{ default_payment_detail.expiration_date.strftime('%Y-%m') if default_payment_detail else '' }}" required>
+            </div>
 
-        <div class="form-group" style="padding-bottom:10px">
-            <label for="billing_address">Billing Address:</label>
-            <textarea class="form-control" id="billing_address" name="billing_address" required></textarea>
+            <div class="form-group" style="padding-bottom:10px">
+                <label for="billing_address">Billing Address:</label>
+                <textarea class="form-control" id="billing_address" name="billing_address" required>{{ default_payment_detail.billing_address if default_payment_detail else '' }}</textarea>
+            </div>
         </div>
 
         <input type="hidden" name="total_amount" value="{{ total_amount }}">
         <input type="hidden" name="selected_seats" value="{{ seats | join(',') }}">
 
         {% if session.get('user_id') %}
-        <div class="form-group" style="padding-bottom: 20px;">
-            <input type="checkbox" id="user_payment_details" name="user_payment_details">
-            <label for="user_payment_details">Would you like to save your payment details to this account?</label>
-        </div>
+            <div class="form-group" id="savePaymentDetails" style="padding-bottom: 20px;">
+                <input type="checkbox" id="user_payment_details" name="user_payment_details">
+                <label for="user_payment_details">Would you like to save your payment details to this account?</label>
+            </div>
         {% endif %}
 
         <div class="form-group" style="padding-bottom: 20px;">
@@ -77,6 +89,26 @@
 document.getElementById('terms_conditions').addEventListener('change', function() {
     var payButton = document.getElementById('payButton');
     payButton.disabled = !this.checked;
+});
+
+// Toggle payment fields based on the "Use saved details" checkbox
+function togglePaymentFields(checkbox) {
+    var paymentFields = document.getElementById('paymentFields');
+    var savePaymentDetails = document.getElementById('savePaymentDetails');
+
+    // Toggle the display of payment fields and save details option
+    if (checkbox.checked) {
+        paymentFields.style.display = 'none';
+        savePaymentDetails.style.display = 'none';
+    } else {
+        paymentFields.style.display = 'block';
+        savePaymentDetails.style.display = 'block';
+    }
+}
+    // Initialize the visibility of fields on page load
+document.addEventListener('DOMContentLoaded', function() {
+    var useSavedDetailsCheckbox = document.getElementById('use_saved_details');
+    togglePaymentFields(useSavedDetailsCheckbox); // Run toggle function based on initial checkbox state
 });
 </script>
 
