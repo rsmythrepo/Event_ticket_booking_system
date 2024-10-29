@@ -1,5 +1,4 @@
 
-
 CREATE DATABASE event_bookings;
 USE event_bookings;
 
@@ -42,23 +41,6 @@ CREATE TABLE booking (
     FOREIGN KEY (event_id) REFERENCES event(event_id)
 );
 
-CREATE TABLE seat (
-    seat_id INT AUTO_INCREMENT PRIMARY KEY,
-    event_id INT NOT NULL,
-    seat_number VARCHAR(10) NOT NULL,
-    is_available BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (event_id) REFERENCES event(event_id),
-    UNIQUE(event_id, seat_number)
-);
-
-CREATE TABLE booking_seat (
-    seat_id INT NOT NULL,
-    booking_id INT NOT NULL,
-    PRIMARY KEY (seat_id, booking_id),
-    FOREIGN KEY (seat_id) REFERENCES seat(seat_id),
-    FOREIGN KEY (booking_id) REFERENCES booking(booking_id)
-);
-
 CREATE TABLE ticket_tier (
     tier_id INT AUTO_INCREMENT PRIMARY KEY,
     tier_name VARCHAR(50) NOT NULL,
@@ -68,10 +50,29 @@ CREATE TABLE ticket_tier (
 CREATE TABLE event_ticket_tier (
     event_id INT NOT NULL,
     tier_id INT NOT NULL,
-    total_tickets INT NOT NULL,  -- Tickets available for this tier
+    total_tickets INT NOT NULL,
     PRIMARY KEY (event_id, tier_id),
     FOREIGN KEY (event_id) REFERENCES event(event_id),
     FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id)
+);
+
+CREATE TABLE seat (
+    seat_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
+    seat_number VARCHAR(10) NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    tier_id INT,
+    FOREIGN KEY (event_id) REFERENCES event(event_id),
+    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id),
+    UNIQUE(event_id, seat_number)
+);
+
+CREATE TABLE booking_seat (
+    seat_id INT NOT NULL,
+    booking_id INT NOT NULL,
+    PRIMARY KEY (seat_id, booking_id),
+    FOREIGN KEY (seat_id) REFERENCES seat(seat_id),
+    FOREIGN KEY (booking_id) REFERENCES booking(booking_id)
 );
 
 CREATE TABLE ticket (

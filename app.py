@@ -776,17 +776,23 @@ def sales_report():
 @app.route('/admin/events/new', methods=['GET', 'POST'])
 def create_event():
     if request.method == 'POST':
-        # Capture event details from the form
+
         title = request.form.get('title')
         description = request.form.get('description')
         venue = request.form.get('venue')
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
-        total_tickets = int(request.form.get('total_tickets'))
 
-        # Capture ticket tiers and prices
         ticket_tiers = request.form.getlist('ticket_tiers[]')
         tier_prices = request.form.getlist('tier_prices[]')
+        tier_seat_counts = request.form.getlist('tier_seat_counts[]')
+
+        try:
+            tier_seat_counts = [int(count) for count in tier_seat_counts if count]
+            total_tickets = sum(tier_seat_counts)
+        except ValueError:
+            flash("Please provide a valid seat count for each tier.", "error")
+            return render_template('admin/create_event.html')
 
         try:
             # Step 1: Create the new event
@@ -800,32 +806,38 @@ def create_event():
                 available_tickets=total_tickets
             )
             db.session.add(new_event)
-            db.session.flush()  # Flush to get the event_id for the next operations
+            db.session.flush()
 
-            # Step 2: Create seats for the event
-            seats = []
-            for i in range(1, total_tickets + 1):
-                seat_number = f"{chr(64 + (i - 1) // 10 + 1)}{i % 10 if i % 10 != 0 else 10}"  # Generate seat numbers like A1, A2, etc.
-                seat = Seat(event_id=new_event.event_id, seat_number=seat_number, is_available=True)
-                seats.append(seat)
-            db.session.bulk_save_objects(seats)
+            # Step 2: Define ticket tiers and associate seats with each tier
+            assigned_seat_count = 0  # Track seat assignment across tiers
 
-            # Step 3: Define ticket tiers and associate with the event
-            for tier_name, tier_price in zip(ticket_tiers, tier_prices):
+            for tier_name, tier_price, tier_seat_count in zip(ticket_tiers, tier_prices, tier_seat_counts):
+                # Ensure tier_seat_count is an integer
+                tier_seat_count = int(tier_seat_count)
+
                 # Create or find the ticket tier
                 ticket_tier = TicketTier.query.filter_by(tier_name=tier_name).first()
                 if not ticket_tier:
                     ticket_tier = TicketTier(tier_name=tier_name, price=tier_price)
                     db.session.add(ticket_tier)
-                    db.session.flush()  # Get tier_id
+                    db.session.flush()
 
-                # Link the ticket tier to the event with available ticket count
+                # Link the ticket tier to the event with the count of tickets for that tier
                 event_ticket_tier = EventTicketTier(
                     event_id=new_event.event_id,
                     tier_id=ticket_tier.tier_id,
-                    total_tickets=total_tickets
+                    total_tickets=tier_seat_count
                 )
                 db.session.add(event_ticket_tier)
+
+                # Create seats for this specific tier
+                seats = []
+                for _ in range(tier_seat_count):
+                    assigned_seat_count += 1
+                    seat_number = f"{chr(64 + (assigned_seat_count - 1) // 10 + 1)}{assigned_seat_count % 10 if assigned_seat_count % 10 != 0 else 10}"
+                    seat = Seat(event_id=new_event.event_id, seat_number=seat_number, is_available=True, tier_id=ticket_tier.tier_id)
+                    seats.append(seat)
+                db.session.bulk_save_objects(seats)
 
             # Commit all changes
             db.session.commit()
@@ -837,6 +849,7 @@ def create_event():
             flash(f"Error creating event: {str(e)}", "error")
 
     return render_template('admin/create_event.html')
+
 
 @app.route('/admin/logout')
 def admin_logout():
