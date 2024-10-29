@@ -6,38 +6,51 @@
 <h1>Create New Event</h1>
 
 <form method="POST" action="{{ url_for('create_event') }}">
+    <!-- Event Title -->
     <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
         <input type="text" class="form-control" id="title" name="title" required>
     </div>
 
+    <!-- Description -->
     <div class="mb-3">
         <label for="description" class="form-label">Description</label>
         <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
     </div>
 
+    <!-- Venue -->
     <div class="mb-3">
         <label for="venue" class="form-label">Venue</label>
         <input type="text" class="form-control" id="venue" name="venue" required>
     </div>
 
+    <!-- Start Date -->
     <div class="mb-3">
         <label for="start_date" class="form-label">Start Date</label>
         <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
     </div>
 
+    <!-- End Date -->
     <div class="mb-3">
         <label for="end_date" class="form-label">End Date</label>
         <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
     </div>
-<!--
+
+    <!-- Booking Start Time -->
     <div class="mb-3">
-        <label for="total_tickets" class="form-label">Total Tickets</label>
-        <input type="number" class="form-control" id="total_tickets" name="total_tickets" required onchange="validateTotalSeats()">
+        <label for="booking_open_time" class="form-label">Booking Start Time</label>
+        <input type="datetime-local" class="form-control" id="booking_open_time" name="booking_open_time" required>
     </div>
--->
+
+    <!-- Booking End Time -->
+    <div class="mb-3">
+        <label for="booking_close_time" class="form-label">Booking End Time</label>
+        <input type="datetime-local" class="form-control" id="booking_close_time" name="booking_close_time" required>
+    </div>
+
+    <!-- Ticket Tiers Section -->
+    <label class="form-label">Ticket Tiers</label>
     <div id="ticketTiers">
-        <label class="form-label">Ticket Tiers</label>
         <div class="row mb-2 tier-input">
             <div class="col-md-4">
                 <input type="text" class="form-control" name="ticket_tiers[]" placeholder="Tier Name (e.g., VIP)" required>
@@ -53,12 +66,13 @@
             </div>
         </div>
     </div>
-
     <button type="button" class="btn btn-secondary mb-3" onclick="addTier()">Add Another Tier</button>
 
+    <!-- Submit Button -->
     <button type="submit" class="btn btn-primary">Create Event</button>
 </form>
 
+<!-- JavaScript for Adding and Removing Ticket Tiers -->
 <script>
 function addTier() {
     const tierContainer = document.createElement('div');
@@ -72,7 +86,7 @@ function addTier() {
             <input type="number" class="form-control" name="tier_prices[]" placeholder="Price" step="0.01" required>
         </div>
         <div class="col-md-3">
-            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" min="1" required>
+            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" required>
         </div>
         <div class="col-md-2">
             <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
