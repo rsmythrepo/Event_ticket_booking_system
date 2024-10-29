@@ -3,5 +3,215 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h1>Sales Report</h1>
+<h1>Admin Sales Report</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="report-summary">
+    <h2>Summary</h2>
+    <p><strong>Total Tickets Sold:</strong> {{ total_tickets_sold }}</p>
+    <p><strong>Total Revenue Generated:</strong> ${{ total_revenue | round(2) }}</p>
+</div>
+
+<hr>
+<form method="GET" action="{{ url_for('sales_report') }}" class="admin-form date-selection">
+    <select name="timeframe" id="timeframe" onchange="this.form.submit()">
+        <option value="7days" {% if selected_timeframe == '7days' %}selected{% endif %}>Last 7 Days</option>
+        <option value="30days" {% if selected_timeframe == '30days' %}selected{% endif %}>Last 30 Days</option>
+        <option value="1year" {% if selected_timeframe == '1year' %}selected{% endif %}>Last Year</option>
+    </select>
+</form>
+
+<div class="chart-row">
+    <div class="chart-container">
+        <h2>Ticket Sales per Day</h2>
+        <canvas id="ticketSalesChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+        <h2>Revenue Generated per Day</h2>
+        <canvas id="revenueChart"></canvas>
+    </div>
+</div>
+
+<hr>
+
+<div class="event-stats">
+    <h2>Event Statistics</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Event Title</th>
+                <th>Tickets Sold</th>
+                <th>Revenue</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in events %}
+            <tr>
+                <td>{{ event.title }}</td>
+                <td>{{ event.tickets_sold }}</td>
+                <td>${{ event.revenue | round(2) }}</td>
+                <td>
+                    <button class="btn btn-info" data-toggle="modal" data-target="#modal{{ loop.index }}" data-event-id="{{ loop.index }}">
+                        View Sales
+                    </button>
+                </td>
+            </tr>
+
+            <!-- Modal -->
+            <div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ loop.index }}" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLabel{{ loop.index }}">Sales Data for {{ event.title }}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <canvas id="ticketsChart{{ loop.index }}" style="height: 200px;"></canvas>
+                            <canvas id="revenueChart{{ loop.index }}" style="height: 200px;"></canvas>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    const ticketSalesCtx = document.getElementById('ticketSalesChart').getContext('2d');
+    const ticketSalesGradient = ticketSalesCtx.createLinearGradient(0, 0, 0, 400);
+    ticketSalesGradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+    ticketSalesGradient.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
+
+    const ticketSalesChart = new Chart(ticketSalesCtx, {
+        type: 'line',
+        data: {
+            labels: {{ tickets_sold_chart_labels | tojson | safe }},
+            datasets: [{
+                label: 'Tickets Sold',
+                data: {{ tickets_sold_chart_data | tojson | safe }},
+                backgroundColor: ticketSalesGradient,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#333'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(54, 162, 235, 0.8)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#666'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.3)',
+                        borderDash: [5, 5]
+                    },
+                    ticks: {
+                        color: '#666'
+                    }
+                }
+            }
+        }
+    });
+
+    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
+    const gradientRevenue = ctxRevenue.createLinearGradient(0, 0, 0, 400);
+    gradientRevenue.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
+    gradientRevenue.addColorStop(1, 'rgba(255, 159, 64, 0.3)');
+
+    const revenueChart = new Chart(ctxRevenue, {
+        type: 'line',
+        data: {
+            labels: {{ revenue_chart_labels | tojson | safe }},
+            datasets: [{
+                label: 'Revenue Generated',
+                data: {{ revenue_chart_data | tojson | safe }},
+                backgroundColor: gradientRevenue,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#333'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255, 99, 132, 0.8)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#666'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(200, 200, 200, 0.3)',
+                        borderDash: [5, 5]
+                    },
+                    ticks: {
+                        color: '#666'
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

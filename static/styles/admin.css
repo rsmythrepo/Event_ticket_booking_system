@@ -1,0 +1,49 @@
+.admin-form {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.admin-form label {
+    margin-right: 15px;
+    font-weight: bold;
+    color: #333;
+    font-size: 16px;
+}
+
+.admin-form select {
+    padding: 10px;
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #f8f9fa;
+    color: #333;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.admin-form select:focus {
+    border-color: #0056b3;
+    background-color: #e2e6ea;
+    outline: none;
+}
+
+.admin-form option {
+    padding: 10px;
+}
+.date-selection{
+        justify-content: flex-end;
+    margin-right: 10vw;
+}
+.chart-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding:0 15px;
+}
+
+.chart-container {
+    flex: 1;
+}
+
