@@ -38,6 +38,8 @@ class Event(db.Model):
     end_date = db.Column(db.DateTime, nullable=False)
     total_tickets = db.Column(db.Integer, nullable=False)
     available_tickets = db.Column(db.Integer, nullable=False)
+    booking_open_time = db.Column(db.DateTime, nullable=True)  # New field for booking start time
+    booking_close_time = db.Column(db.DateTime, nullable=True)  # New field for booking end time
 
     bookings = db.relationship('Booking', backref='event', lazy=True)
     seats = db.relationship('Seat', backref='event', lazy=True)
