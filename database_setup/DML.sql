@@ -63,33 +63,33 @@ VALUES
 
 INSERT INTO booking (user_id, event_id, total_amount, booking_date, booking_status)
 VALUES
-(1, 1, 300.00, '2024-09-10', 'confirmed'),
-(1, 1, 150.00, '2024-09-15', 'confirmed'),
-(2, 1, 225.00, '2024-09-20', 'confirmed'),
-(1, 2, 75.00, '2024-09-25', 'confirmed'),
-(2, 2, 150.00, '2024-09-28', 'confirmed'),
+(1, 1, 300.00, '2024-10-14', 'confirmed'),
+(1, 1, 150.00, '2024-10-5', 'confirmed'),
+(2, 1, 225.00, '2024-10-21', 'confirmed'),
+(1, 2, 75.00, '2024-10-24', 'confirmed'),
+(2, 2, 150.00, '2024-10-22', 'confirmed'),
 (3, 3, 225.00, '2024-10-01', 'confirmed'),
 (1, 3, 375.00, '2024-10-02', 'confirmed'),
 (2, 3, 75.00, '2024-10-04', 'confirmed');
 
 INSERT INTO booking_seat (seat_id, booking_id)
 VALUES
-(2, 3), (3, 3), (4, 3), -- Three seats for booking ID 3 (user 1 on event 1)
-(5, 4), -- One seat for booking ID 4 (user 1 on event 1)
-(6, 5), (7, 5), (8, 5), -- Three seats for booking ID 5 (user 2 on event 1)
-(11, 6), -- One seat for booking ID 6 (user 1 on event 2)
-(12, 7), (13, 7), -- Two seats for booking ID 7 (user 2 on event 2)
-(16, 8), (17, 8), (18, 8), -- Three seats for booking ID 8 (user 3 on event 3)
+(2, 3), (3, 3), (4, 3),
+(5, 4),
+(6, 5), (7, 5), (8, 5),
+(11, 6),
+(12, 7), (13, 7),
+(16, 8), (17, 8), (18, 8),
 (19, 9), (20, 9), (21, 9), (22, 9);
 
 INSERT INTO ticket (booking_id, event_id, seat_id, tier_id)
 VALUES
-(3, 1, 2, 2), (3, 1, 3, 2), (3, 1, 4, 1), -- Tickets for booking ID 3 (user 1 on event 1)
-(4, 1, 5, 1), -- Ticket for booking ID 4 (user 1 on event 1)
-(5, 1, 6, 3), (5, 1, 7, 3), (5, 1, 8, 2), -- Tickets for booking ID 5 (user 2 on event 1)
-(6, 2, 11, 2), -- Ticket for booking ID 6 (user 1 on event 2)
-(7, 2, 12, 1), (7, 2, 13, 1), -- Tickets for booking ID 7 (user 2 on event 2)
-(8, 3, 16, 3), (8, 3, 17, 2), (8, 3, 18, 2), -- Tickets for booking ID 8 (user 3 on event 3)
+(3, 1, 2, 2), (3, 1, 3, 2), (3, 1, 4, 1),
+(4, 1, 5, 1),
+(5, 1, 6, 3), (5, 1, 7, 3), (5, 1, 8, 2),
+(6, 2, 11, 2),
+(7, 2, 12, 1), (7, 2, 13, 1),
+(8, 3, 16, 3), (8, 3, 17, 2), (8, 3, 18, 2),
 (9, 3, 19, 1), (9, 3, 20, 2), (9, 3, 21, 3), (9, 3, 22, 2);
 
 --INSERT INTO payment_detail (user_id, card_type, card_number, cardholder_name, expiration_date, billing_address)
