@@ -1,3 +1,7 @@
+function startSeatPolling(eventId, index) {
+    setInterval(() => fetchAvailableSeats(eventId, index), 1000); // fetching every second
+}
+
 function fetchAvailableSeats(eventId, index) {
     fetch(`/admin/event_available_seats/${eventId}`)
         .then(response => {
@@ -7,14 +11,13 @@ function fetchAvailableSeats(eventId, index) {
             return response.json();
         })
         .then(data => {
-            // Get the seat container
             const seatContainer = document.getElementById(`seat-container${index}`);
-            seatContainer.innerHTML = ''; // Clear previous content
+            seatContainer.innerHTML = '';
 
-            const cols = 7; // Number of columns in the seat map
+            const cols = 7;
             const seats = data.seats;
             const seatCount = seats.length;
-            const rows = Math.ceil(seatCount / cols); // Calculate number of rows
+            const rows = Math.ceil(seatCount / cols);
 
             for (let row = 0; row < rows; row++) {
                 const seatRow = document.createElement('div');
@@ -41,20 +44,18 @@ function fetchAvailableSeats(eventId, index) {
                         emptySeatDiv.style.margin = '5px';
                         emptySeatDiv.style.cursor = 'not-allowed';
                         emptySeatDiv.style.opacity = '0.3';
-                        emptySeatDiv.innerHTML = '<span></span>'; // Empty seat placeholder
+                        emptySeatDiv.innerHTML = '<span></span>';
                         seatRow.appendChild(emptySeatDiv);
                     }
                 }
                 seatContainer.appendChild(seatRow);
             }
 
-            // Update available seats count
             const availableSeatsCount = seats.filter(seat => seat.is_available).length;
             document.getElementById(`availableSeatsCount${index}`).textContent = availableSeatsCount;
         })
         .catch(error => console.error('Error fetching available seats:', error));
 }
-
 function initializeCharts() {
     const ticketSalesCtx = document.getElementById('ticketSalesChart').getContext('2d');
     const ticketSalesGradient = ticketSalesCtx.createLinearGradient(0, 0, 0, 400);
@@ -177,7 +178,6 @@ function initializeCharts() {
     });
 }
 
-// Call initializeCharts once the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', function() {
     initializeCharts();
 });

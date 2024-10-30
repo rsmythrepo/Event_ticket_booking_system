@@ -614,6 +614,8 @@ def update_default_payment():
 
 @app.route('/print_booking/<int:booking_id>')
 def print_booking(booking_id):
+
+    #QR Code system
     booking = Booking.query.get_or_404(booking_id)
     event = Event.query.get_or_404(booking.event_id)
     buffer = BytesIO()
@@ -622,6 +624,7 @@ def print_booking(booking_id):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as temp_file:
         qr_img.save(temp_file, format='PNG')
         temp_file_path = temp_file.name
+    #creating template for pdf
     c = canvas.Canvas(buffer, pagesize=letter)
     pdf_title = f"Booking Confirmation - {event.title} on {event.start_date.strftime('%Y-%m-%d')}"
     c.setTitle(pdf_title)
@@ -659,6 +662,7 @@ def print_booking(booking_id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    #checking for user id
     if 'user_id' in session:
         return redirect(url_for('homepage'))
     if request.method == 'POST':
@@ -683,6 +687,7 @@ def register():
         if password != confirm_password:
             flash("Passwords do not match!", "error")
             return redirect(url_for('register'))
+        #hashing password
         hashed_password = generate_password_hash(password)
         new_user = User(
             firstname=firstname,
@@ -706,6 +711,7 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    #checking for user id in session, else redirect
     if 'user_id' in session:
         return redirect(url_for('homepage'))
     if request.method == 'POST':
@@ -726,6 +732,7 @@ def login():
 
 @app.route('/logout')
 def logout():
+    #deleting user info from session
     session.pop('user_id', None)
     session.pop('username', None)
     flash("You have been logged out.", "success")
@@ -913,6 +920,7 @@ def sales_report():
                            revenue_chart_data=revenue_data)
 @app.route('/admin/event_available_seats/<int:event_id>', methods=['GET'])
 def get_available_seats(event_id):
+    #query to select availbable seats
     seats = (
         db.session.query(Seat.seat_number, Seat.is_available)
         .filter(Seat.event_id == event_id)
