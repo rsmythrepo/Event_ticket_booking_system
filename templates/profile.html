@@ -5,7 +5,6 @@
 {% block content %}
     <h1>Welcome, {{ user.firstname }}</h1>
 
-
     <div class="d-flex justify-content-between align-items-center">
         <h2>Your Details</h2>
         <a href="{{ url_for('my_bookings') }}" class="btn btn-primary">View My Bookings</a>
@@ -15,30 +14,33 @@
     <p><strong>Username:</strong> {{ user.username }}</p>
     <p><strong>Email:</strong> {{ user.email }}</p>
 
-
     <h2 class="text-start">Your Payment Details</h2>
     <div class="d-flex justify-content-start">
         {% if payment_details %}
-            <table class="table table-striped">
-                <tr>
-                    <th>Cardholder Name</th>
-                    <th>Card Type</th>
-                    <th>Card Number</th>
-                    <th>Billing Address</th>
-                    <th>Default Payment</th>
-                </tr>
-                {% for payment in payment_details %}
-                <tr>
-                    <td>{{ payment.cardholder_name }}</td>
-                    <td>{{ payment.card_type }}</td>
-                    <td>..{{ payment.card_number[-4:] | safe }}</td> <!-- Masked card number -->
-                    <td>{{ payment.billing_address }}</td>
-                    <td>
-                        <input type="checkbox" {% if payment.default_payment %}checked{% endif %} disabled> <!-- Checkbox for default payment -->
-                    </td>
-                </tr>
-                {% endfor %}
-            </table>
+            <form method="POST" action="{{ url_for('update_default_payment') }}">
+                <table class="table table-striped">
+                    <tr>
+                        <th>Cardholder Name</th>
+                        <th>Card Type</th>
+                        <th>Card Number</th>
+                        <th>Billing Address</th>
+                        <th>Default Payment</th>
+                    </tr>
+                    {% for payment in payment_details %}
+                    <tr>
+                        <td>{{ payment.cardholder_name }}</td>
+                        <td>{{ payment.card_type }}</td>
+                        <td>..{{ payment.card_number[-4:] | safe }}</td>
+                        <td>{{ payment.billing_address }}</td>
+                        <td>
+                            <input type="radio" name="default_payment" value="{{ payment.payment_detail_id }}"
+                                   {% if payment.default_payment %}checked{% endif %}
+                                   onchange="this.form.submit()"> <!-- Radio button for default payment -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </form>
         {% else %}
             <p>No payment details available.</p>
         {% endif %}

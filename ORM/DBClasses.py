@@ -1,4 +1,3 @@
-
 from __init__ import db
 
 
@@ -23,8 +22,8 @@ class User(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('role.role_id'), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-    bookings = db.relationship('Booking', backref='user', lazy=True)
-    payment_details = db.relationship('PaymentDetail', backref='user', lazy=True)
+    bookings = db.relationship('Booking', back_populates='user', lazy=True)
+    payment_details = db.relationship('PaymentDetail', back_populates='user', lazy=True)
 
 
 class Event(db.Model):
@@ -41,9 +40,9 @@ class Event(db.Model):
     booking_open_time = db.Column(db.DateTime, nullable=True)  # New field for booking start time
     booking_close_time = db.Column(db.DateTime, nullable=True)  # New field for booking end time
 
-    bookings = db.relationship('Booking', backref='event', lazy=True)
-    seats = db.relationship('Seat', backref='event', lazy=True)
-    ticket_tiers = db.relationship('EventTicketTier', backref='event', lazy=True)
+    bookings = db.relationship('Booking', back_populates='event', lazy=True)
+    seats = db.relationship('Seat', back_populates='event', lazy=True)
+    ticket_tiers = db.relationship('EventTicketTier', back_populates='event', lazy=True)
 
 
 class Booking(db.Model):
@@ -55,8 +54,12 @@ class Booking(db.Model):
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     booking_date = db.Column(db.DateTime, default=db.func.current_timestamp())
     booking_status = db.Column(db.Enum('confirmed', 'cancelled'), default='confirmed')
-    seats = db.relationship('Seat', secondary='booking_seat', backref=db.backref('bookings', lazy=True))
-    tickets = db.relationship('Ticket', backref='booking', lazy=True)
+
+    user = db.relationship('User', back_populates='bookings')
+    event = db.relationship('Event', back_populates='bookings')
+    seats = db.relationship('Seat', secondary='booking_seat', back_populates='bookings', overlaps="booking_seats")
+    tickets = db.relationship('Ticket', back_populates='booking', cascade="all, delete-orphan")
+    booking_seats = db.relationship('BookingSeat', back_populates='booking', overlaps="seats")
 
 
 class Seat(db.Model):
@@ -64,10 +67,13 @@ class Seat(db.Model):
 
     seat_id = db.Column(db.Integer, primary_key=True)
     event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'), nullable=False)
-    seat_number = db.Column(db.String(10), nullable=False)
+    seat_number = db.Column(db.String(10), nullable=False, unique=True)
     is_available = db.Column(db.Boolean, default=True)
     tier_id = db.Column(db.Integer, db.ForeignKey('ticket_tier.tier_id'), nullable=True)
-    booking_seats = db.relationship('BookingSeat', backref='seat', lazy=True)
+
+    event = db.relationship('Event', back_populates='seats')
+    bookings = db.relationship('Booking', secondary='booking_seat', back_populates='seats', overlaps="booking_seats")
+    booking_seats = db.relationship('BookingSeat', back_populates='seat', overlaps="bookings")
 
 
 class BookingSeat(db.Model):
@@ -75,6 +81,10 @@ class BookingSeat(db.Model):
 
     seat_id = db.Column(db.Integer, db.ForeignKey('seat.seat_id'), primary_key=True)
     booking_id = db.Column(db.Integer, db.ForeignKey('booking.booking_id'), primary_key=True)
+
+    # Define relationships with back_populates and overlaps
+    seat = db.relationship('Seat', back_populates='booking_seats', overlaps="bookings,seats")
+    booking = db.relationship('Booking', back_populates='booking_seats', overlaps="seats,bookings")
 
 
 class TicketTier(db.Model):
@@ -84,7 +94,7 @@ class TicketTier(db.Model):
     tier_name = db.Column(db.String(50), nullable=False)
     price = db.Column(db.Numeric(10, 2), nullable=False)
 
-    event_ticket_tiers = db.relationship('EventTicketTier', backref='ticket_tier', lazy=True)
+    event_ticket_tiers = db.relationship('EventTicketTier', back_populates='ticket_tier', lazy=True)
 
 
 class EventTicketTier(db.Model):
@@ -93,6 +103,9 @@ class EventTicketTier(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'), primary_key=True)
     tier_id = db.Column(db.Integer, db.ForeignKey('ticket_tier.tier_id'), primary_key=True)
     total_tickets = db.Column(db.Integer, nullable=False)
+
+    event = db.relationship('Event', back_populates='ticket_tiers')
+    ticket_tier = db.relationship('TicketTier', back_populates='event_ticket_tiers')
 
 
 class Ticket(db.Model):
@@ -103,6 +116,8 @@ class Ticket(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey('event.event_id'), nullable=False)
     seat_id = db.Column(db.Integer, db.ForeignKey('seat.seat_id'), nullable=False)
     tier_id = db.Column(db.Integer, db.ForeignKey('ticket_tier.tier_id'), nullable=False)
+
+    booking = db.relationship('Booking', back_populates='tickets')
 
 
 class Notification(db.Model):
@@ -128,6 +143,8 @@ class PaymentDetail(db.Model):
     expiration_date = db.Column(db.Date, nullable=False)
     billing_address = db.Column(db.Text, nullable=False)
     default_payment = db.Column(db.Boolean, default=False)
+
+    user = db.relationship('User', back_populates='payment_details')
 
 
 class Payment(db.Model):
