@@ -533,6 +533,32 @@ def profile():
 
     return render_template('profile.html', user=user, payment_details=payment_details)
 
+@app.route('/update_default_payment', methods=['POST'])
+@login_required
+def update_default_payment():
+    # Check if session and form data exist
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("User not logged in", "error")
+        return redirect(url_for('login'))
+
+    payment_id = request.form.get('default_payment')
+    if not payment_id:
+        flash("No payment ID provided", "error")
+        return redirect(url_for('profile'))
+
+    # Proceed with update logic
+    PaymentDetail.query.filter_by(user_id=user_id).update({"default_payment": False})
+    default_payment = PaymentDetail.query.get(payment_id)
+    if default_payment and default_payment.user_id == user_id:
+        default_payment.default_payment = True
+        db.session.commit()
+        flash("Default payment updated successfully", "success")
+    else:
+        flash("Invalid payment selection", "error")
+
+    return redirect(url_for('profile'))
+
 @app.route('/print_booking/<int:booking_id>')
 def print_booking(booking_id):
     booking = Booking.query.get_or_404(booking_id)
