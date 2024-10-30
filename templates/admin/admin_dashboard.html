@@ -8,9 +8,10 @@
         <h4>Admin Dashboard</h4>
     </div>
     <div class="card-body">
-        <p>Welcome to the admin dashboard! Here you can manage events, view sales reports, and handle user bookings.</p>
+        <p>Welcome to the admin dashboard! Here you can manage events, view sales reports, and handle bookings.</p>
 
         <div class="row">
+            <!-- Manage Events Section -->
             <div class="col-md-6">
                 <div class="card mb-4 shadow-sm">
                     <div class="card-body">
@@ -21,12 +22,24 @@
                 </div>
             </div>
 
+            <!-- View Sales Reports Section -->
             <div class="col-md-6">
                 <div class="card mb-4 shadow-sm">
                     <div class="card-body">
                         <h5 class="card-title">View Sales Reports</h5>
                         <p class="card-text">View detailed reports on ticket sales and revenue.</p>
                         <a href="/admin/salesreport" class="btn btn-primary">Go to Reports</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Management Section -->
+            <div class="col-md-6">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Booking Management</h5>
+                        <p class="card-text">Manage user bookings, cancellations, and reassign seats.</p>
+                        <a href="/admin/booking_management" class="btn btn-primary">Go to Booking Management</a>
                     </div>
                 </div>
             </div>

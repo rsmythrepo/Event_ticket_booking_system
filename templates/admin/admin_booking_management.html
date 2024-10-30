@@ -1,0 +1,81 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Booking Management{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white">
+        <h4>Booking Management</h4>
+    </div>
+    <div class="card-body">
+        <p>Manage all user bookings, cancel booking and issue refunds.</p>
+
+        <!-- Filter Form -->
+        <form method="GET" action="{{ url_for('admin_booking_management') }}" class="mb-4">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All</option>
+                        <option value="confirmed" {% if request.args.get('status') == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" name="username" id="username" class="form-control" value="{{ request.args.get('username', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="event" class="form-label">Event Title</label>
+                    <input type="text" name="event" id="event" class="form-control" value="{{ request.args.get('event', '') }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </div>
+        </form>
+        <!-- Bookings Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>User</th>
+                    <th>Event</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.booking_id }}</td>
+                    <td>{{ booking.user.username }}</td>
+                    <td>{{ booking.event.title }}</td>
+                    <td>{{ booking.total_amount }}</td>
+                    <td>{{ booking.booking_status }}</td>
+                    <td>
+                        {% if booking.booking_status == 'confirmed' %}
+                            <!-- Cancel Booking Button for confirmed bookings only -->
+                            <form method="POST" action="{{ url_for('admin_cancel_booking', booking_id=booking.booking_id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-warning btn-sm">Cancel</button>
+                            </form>
+                        {% elif booking.booking_status == 'cancelled' %}
+                            {% set payment = payments.get(booking.booking_id) %}
+                            {% if payment and payment.payment_status == 'refunded' %}
+                                <span><strong>Refunded</strong></span>
+                            {% else %}
+                                <!-- Refund Button for canceled bookings only -->
+                                <form method="POST" action="{{ url_for('admin_issue_refund', booking_id=booking.booking_id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-success btn-sm">Refund</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
