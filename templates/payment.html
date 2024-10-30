@@ -78,6 +78,9 @@
             <label for="terms_conditions">I agree to the <a href="/terms" target="_blank">Terms and Conditions</a></label>
         </div>
 
+        <!-- Hidden input for use_saved_details -->
+        <input type="hidden" name="use_saved_details" id="hidden_use_saved_details" value="">
+
         <button type="submit" class="btn btn-success" id="payButton" disabled>
             Pay ${{ total_amount }}
         </button>
@@ -110,6 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var useSavedDetailsCheckbox = document.getElementById('use_saved_details');
     togglePaymentFields(useSavedDetailsCheckbox); // Run toggle function based on initial checkbox state
 });
+    document.getElementById('paymentForm').addEventListener('submit', function() {
+        var useSavedCheckbox = document.getElementById('use_saved_details');
+        var hiddenInput = document.getElementById('hidden_use_saved_details');
+        hiddenInput.value = useSavedCheckbox.checked ? "1" : "0";
+    });
 </script>
 
 {% endblock %}

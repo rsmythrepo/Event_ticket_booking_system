@@ -1,64 +1,84 @@
 {% extends "admin/admin_base.html" %}
 
-{% block title %}Create New Event{% endblock %}
+{% block title %}
+    {% if event %}Edit Event{% else %}Create New Event{% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>Create New Event</h1>
+<h1>{% if event %}Edit Event{% else %}Create New Event{% endif %}</h1>
 
-<form method="POST" action="{{ url_for('create_event') }}">
+<form method="POST" action="{% if event %}{{ url_for('update_event', event_id=event.event_id) }}{% else %}{{ url_for('create_event') }}{% endif %}">
+    <!-- Event Title -->
     <div class="mb-3">
         <label for="title" class="form-label">Event Title</label>
-        <input type="text" class="form-control" id="title" name="title" required>
+        <input type="text" class="form-control" id="title" name="title" value="{{ event.title if event else '' }}" required>
     </div>
 
+    <!-- Description -->
     <div class="mb-3">
         <label for="description" class="form-label">Description</label>
-        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+        <textarea class="form-control" id="description" name="description" rows="3" required>{{ event.description if event else '' }}</textarea>
     </div>
 
+    <!-- Venue -->
     <div class="mb-3">
         <label for="venue" class="form-label">Venue</label>
-        <input type="text" class="form-control" id="venue" name="venue" required>
+        <input type="text" class="form-control" id="venue" name="venue" value="{{ event.venue if event else '' }}" required>
     </div>
 
+    <!-- Start Date -->
     <div class="mb-3">
         <label for="start_date" class="form-label">Start Date</label>
-        <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+        <input type="datetime-local" class="form-control" id="start_date" name="start_date" value="{{ event.start_date.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required>
     </div>
 
+    <!-- End Date -->
     <div class="mb-3">
         <label for="end_date" class="form-label">End Date</label>
-        <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
+        <input type="datetime-local" class="form-control" id="end_date" name="end_date" value="{{ event.end_date.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required>
     </div>
 
+    <!-- Booking Start Time -->
+    <div class="mb-3">
+        <label for="booking_open_time" class="form-label">Booking Start Time</label>
+        <input type="datetime-local" class="form-control" id="booking_open_time" name="booking_open_time" value="{{ event.booking_open_time.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required>
+    </div>
+
+    <!-- Booking End Time -->
+    <div class="mb-3">
+        <label for="booking_close_time" class="form-label">Booking Close Time</label>
+        <input type="datetime-local" class="form-control" id="booking_close_time" name="booking_close_time" value="{{ event.booking_close_time.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required>
+    </div>
+
+    <!-- Ticket Tiers -->
+    <label class="form-label">Ticket Tiers</label>
     <div id="ticketTiers">
-        <label class="form-label">Ticket Tiers</label>
-        <div class="row mb-2 tier-input">
-            <div class="col-md-4">
-                <input type="text" class="form-control" name="ticket_tiers[]" placeholder="Tier Name (e.g., VIP)" required>
+        {% if event %}
+            {% for tier in event.ticket_tiers %}
+            <div class="row mb-2 tier-input">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="ticket_tiers[]" value="{{ tier.tier_name }}" placeholder="Tier Name (e.g., VIP)" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" name="tier_prices[]" value="{{ tier.ticket_tier.price }}" placeholder="Price" step="0.01" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" name="tier_seat_counts[]" value="{{ tier.total_tickets }}" placeholder="Seats" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
+                </div>
             </div>
-            <div class="col-md-3">
-                <input type="number" class="form-control" name="tier_prices[]" placeholder="Price (e.g., 100)" step="0.01" required>
-            </div>
-            <div class="col-md-3">
-                <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" required>
-            </div>
-            <div class="col-md-2">
-                <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
-            </div>
-        </div>
+            {% endfor %}
+        {% endif %}
     </div>
-
     <button type="button" class="btn btn-secondary mb-3" onclick="addTier()">Add Another Tier</button>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary">{% if event %}Update Event{% else %}Create Event{% endif %}</button>
 </form>
 
-<div class="text-end">
-    <button type="submit" class="btn btn-primary">Create Event</button>
-</div>
-
-<div class="text-end" style="padding bottom:40px">
-</div>
-
+<!-- JavaScript for Adding and Removing Ticket Tiers -->
 <script>
 function addTier() {
     const tierContainer = document.createElement('div');
@@ -72,7 +92,7 @@ function addTier() {
             <input type="number" class="form-control" name="tier_prices[]" placeholder="Price" step="0.01" required>
         </div>
         <div class="col-md-3">
-            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" min="1" required>
+            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" required>
         </div>
         <div class="col-md-2">
             <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
@@ -86,5 +106,4 @@ function removeTier(button) {
     button.closest('.tier-input').remove();
 }
 </script>
-
 {% endblock %}
