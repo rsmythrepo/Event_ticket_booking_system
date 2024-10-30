@@ -1,0 +1,99 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}Edit Event{% endblock %}
+
+{% block content %}
+<h1>Edit Event</h1>
+
+<form method="POST" action="{{ url_for('update_event', event_id=event.event_id) }}">
+    <!-- Event Title -->
+    <div class="mb-3">
+        <label for="title" class="form-label">Event Title</label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ event.title }}" required>
+    </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+        <label for="description" class="form-label">Description</label>
+        <textarea class="form-control" id="description" name="description" rows="3" required>{{ event.description }}</textarea>
+    </div>
+
+    <!-- Venue -->
+    <div class="mb-3">
+        <label for="venue" class="form-label">Venue</label>
+        <input type="text" class="form-control" id="venue" name="venue" value="{{ event.venue }}" required>
+    </div>
+
+    <!-- Start Date -->
+    <div class="mb-3">
+        <label for="start_date" class="form-label">Start Date</label>
+        <input type="datetime-local" class="form-control" id="start_date" name="start_date" value="{{ event.start_date|datetimeformat('YYYY-MM-DDTHH:mm') }}" required>
+    </div>
+
+    <!-- End Date -->
+    <div class="mb-3">
+        <label for="end_date" class="form-label">End Date</label>
+        <input type="datetime-local" class="form-control" id="end_date" name="end_date" value="{{ event.end_date|datetimeformat('YYYY-MM-DDTHH:mm') }}" required>
+    </div>
+
+    <!-- Booking Start and End Time -->
+    <div class="mb-3">
+        <label for="booking_open_time" class="form-label">Booking Start Time</label>
+        <input type="datetime-local" class="form-control" id="booking_open_time" name="booking_open_time" value="{{ event.booking_open_time|datetimeformat('YYYY-MM-DDTHH:mm') }}" required>
+    </div>
+    <div class="mb-3">
+        <label for="booking_close_time" class="form-label">Booking Close Time</label>
+        <input type="datetime-local" class="form-control" id="booking_close_time" name="booking_close_time" value="{{ event.booking_close_time|datetimeformat('YYYY-MM-DDTHH:mm') }}" required>
+    </div>
+
+    <!-- Ticket Tiers -->
+    <label class="form-label">Ticket Tiers</label>
+    <div id="ticketTiers">
+        {% for tier in event.ticket_tiers %}
+        <div class="row mb-2 tier-input">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="ticket_tiers[]" value="{{ tier.tier_name }}" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="tier_prices[]" value="{{ tier.price }}" step="0.01" required>
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="tier_seat_counts[]" value="{{ tier.total_tickets }}" required>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <button type="button" class="btn btn-secondary mb-3" onclick="addTier()">Add Another Tier</button>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary">Update Event</button>
+</form>
+
+<script>
+// JavaScript for Adding and Removing Ticket Tiers (Same as in Create Event)
+function addTier() {
+    const tierContainer = document.createElement('div');
+    tierContainer.classList.add('row', 'mb-2', 'tier-input');
+    tierContainer.innerHTML = `
+        <div class="col-md-4">
+            <input type="text" class="form-control" name="ticket_tiers[]" placeholder="Tier Name" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control" name="tier_prices[]" placeholder="Price" step="0.01" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" class="form-control" name="tier_seat_counts[]" placeholder="Seats" required>
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-danger" onclick="removeTier(this)">Remove</button>
+        </div>`;
+    document.getElementById('ticketTiers').appendChild(tierContainer);
+}
+function removeTier(button) {
+    button.closest('.tier-input').remove();
+}
+</script>
+{% endblock %}

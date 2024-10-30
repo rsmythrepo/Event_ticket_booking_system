@@ -11,7 +11,7 @@ from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 import qrcode
 from functools import wraps
-
+from sqlalchemy.orm.attributes import flag_modified
 from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
@@ -65,56 +65,109 @@ def luhn_check(card_number):
 @login_required
 def homepage():
     now = datetime.now()
-    # Extract the query parameters for filtering
-    price_from = request.args.get('price_from', type=int)  # Price Range From
-    price_until = request.args.get('price_until', type=int)  # Price Range Until
-    date = request.args.get('date')  # Date Filter
-    selected_venues = request.args.getlist('venue')  # Multiple selected venues
+    three_months_later = now + timedelta(days=90)
+    one_month_later = now + timedelta(days=30)
+
+    # Extract query parameters for filtering
+    price_from = request.args.get('price_from', type=int)
+    price_until = request.args.get('price_until', type=int)
+    date = request.args.get('date')
+    selected_venues = request.args.getlist('venue')
 
     try:
-        # Fetch all unique venues for the venue filter
+        # Fetch all unique venues for filtering options in the template
         venues = [v.venue for v in db.session.query(Event.venue).distinct()]
 
-        # Start base query filtering by booking open and close times
-        events_query = db.session.query(Event).filter(
+        # Query for currently available events (start within the next 3 months)
+        current_events_query = db.session.query(Event).filter(
             Event.booking_open_time <= now,
-            Event.booking_close_time >= now
+            Event.booking_close_time >= now,
+            Event.start_date <= three_months_later
         )
 
-        # Apply additional filters for price, date, and venue if provided
+        # Apply additional filters to current events
         if price_from is not None and price_until is not None:
-            events_query = events_query.join(EventTicketTier).join(TicketTier)
-            events_query = events_query.filter(TicketTier.price >= price_from, TicketTier.price <= price_until)
+            current_events_query = current_events_query.join(EventTicketTier).join(TicketTier).filter(
+                TicketTier.price >= price_from, TicketTier.price <= price_until
+            )
         elif price_from is not None:
-            events_query = events_query.join(EventTicketTier).join(TicketTier)
-            events_query = events_query.filter(TicketTier.price >= price_from)
+            current_events_query = current_events_query.join(EventTicketTier).join(TicketTier).filter(TicketTier.price >= price_from)
         elif price_until is not None:
-            events_query = events_query.join(EventTicketTier).join(TicketTier)
-            events_query = events_query.filter(TicketTier.price <= price_until)
+            current_events_query = current_events_query.join(EventTicketTier).join(TicketTier).filter(TicketTier.price <= price_until)
 
-        # Apply date filter if selected
         if date:
-            events_query = events_query.filter(db.func.date(Event.start_date) == date)
+            current_events_query = current_events_query.filter(db.func.date(Event.start_date) == date)
 
-        # Apply venue filter if multiple venues are selected
         if selected_venues:
-            events_query = events_query.filter(Event.venue.in_(selected_venues))
+            current_events_query = current_events_query.filter(Event.venue.in_(selected_venues))
 
-        # Fetch the filtered events, sorted by start date
-        events = events_query.order_by(Event.start_date.asc()).all()
-        #events = db.session.query(Event).order_by(Event.start_date.asc()).all()
+        # Fetch and sort current events
+        current_events = current_events_query.order_by(Event.start_date.asc()).all()
 
-        # Add a count of available seats for each event
-        for event in events:
+        # Calculate available tickets for each current event
+        for event in current_events:
             event.available_tickets = Seat.query.filter_by(event_id=event.event_id, is_available=True).count()
+
+        # Query for future events (start date beyond the next 3 months)
+        future_events = db.session.query(Event).filter(
+            Event.start_date > three_months_later
+        ).order_by(Event.start_date.asc()).all()
+
+        # Identify events for promotional emails (booking start within the next month)
+        upcoming_events_for_promotion = db.session.query(Event).filter(
+            Event.booking_open_time > now,
+            Event.booking_open_time <= one_month_later
+        ).all()
+
+        # Send promotional emails for these upcoming events
+        send_upcoming_event_promotions(upcoming_events_for_promotion)
 
     except Exception as e:
         flash(f"Error fetching events: {str(e)}", "error")
-        events = []
+        current_events = []
+        future_events = []
         venues = []
 
-    # Render the template with the filtered events and venue options
-    return render_template('home.html', events=events, venues=venues)
+    # Render the template with separated events
+    return render_template('home.html', current_events=current_events, future_events=future_events, venues=venues)
+
+def send_upcoming_event_promotions(events):
+    # Fetch all users to send promotional emails
+    users = db.session.query(User).all()
+    user_emails = [user.email for user in users]
+
+    # Check if there are events to promote
+    if not events:
+        print("No upcoming events to promote.")
+        return
+
+    # Send promotional emails for each event
+    for event in events:
+        subject = f"Upcoming Event: {event.title}"
+        body = f"""Hello,
+
+We have an exciting upcoming event for you:
+
+Event: {event.title}
+Date: {event.start_date.strftime('%Y-%m-%d %H:%M')}
+Venue: {event.venue}
+
+Bookings open on {event.booking_open_time.strftime('%Y-%m-%d %H:%M')}.
+Don’t miss out on securing your spot!
+
+Best Regards,
+Event Booking Team
+"""
+
+        # Send the email to each user
+        for email in user_emails:
+            msg = Message(subject, recipients=[email])
+            msg.body = body
+            try:
+                mail.send(msg)
+                print(f"Promotional email sent to {email} for event {event.title}")
+            except Exception as e:
+                print(f"Failed to send promotional email to {email}: {e}")
 
 
 @app.route('/event/<int:event_id>')
@@ -872,6 +925,154 @@ def create_event():
 
     return render_template('admin/create_event.html')
 
+
+@app.route('/admin/update_event/<int:event_id>', methods=['GET', 'POST'])
+@login_required
+def update_event(event_id):
+    if not is_admin():
+        flash("Unauthorized access!", "error")
+        return redirect(url_for('homepage'))
+
+    # Fetch the event from the database
+    event = Event.query.get(event_id)
+    if not event:
+        flash("Event not found!", "error")
+        return redirect(url_for('admin_events'))
+
+    # Capture original details for change detection
+    original_details = {
+        'title': event.title,
+        'start_date': event.start_date,
+        'end_date': event.end_date,
+        'venue': event.venue,
+        'booking_open_time': event.booking_open_time,
+        'booking_close_time': event.booking_close_time,
+        'ticket_price': {tier.tier_id: tier.ticket_tier.price for tier in event.ticket_tiers}  # Access price via ticket_tier relationship
+    }
+
+    if request.method == 'POST':
+        # Update event details from the form
+        event.title = request.form['title']
+        event.start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%dT%H:%M')
+        event.end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%dT%H:%M')
+        event.venue = request.form['venue']
+        event.booking_open_time = datetime.strptime(request.form['booking_open_time'], '%Y-%m-%dT%H:%M')
+        event.booking_close_time = datetime.strptime(request.form['booking_close_time'], '%Y-%m-%dT%H:%M')
+
+        # Check for changes in basic event fields
+        changes = []
+        if event.title != original_details['title']:
+            changes.append(f"Title updated from '{original_details['title']}' to '{event.title}'")
+        if event.start_date != original_details['start_date']:
+            changes.append(f"Start date changed to {event.start_date}")
+        if event.end_date != original_details['end_date']:
+            changes.append(f"End date changed to {event.end_date}")
+        if event.venue != original_details['venue']:
+            changes.append(f"Venue changed to {event.venue}")
+        if event.booking_open_time != original_details['booking_open_time']:
+            changes.append(f"Booking open time changed to {event.booking_open_time}")
+        if event.booking_close_time != original_details['booking_close_time']:
+            changes.append(f"Booking close time changed to {event.booking_close_time}")
+
+        # Check for changes in ticket tier prices
+        for tier in event.ticket_tiers:
+            original_price = original_details['ticket_price'].get(tier.tier_id)
+            new_price = tier.ticket_tier.price
+            if original_price != new_price:
+                changes.append(f"Ticket price for {tier.ticket_tier.tier_name} changed from {original_price} to {new_price}")
+
+        # Commit changes and send notifications if any changes are detected
+        if changes:
+            db.session.commit()  # Commit event changes only once
+            notify_users_of_changes(event, changes)
+            flash("Event updated and users notified of changes.", "success")
+        else:
+            flash("No significant changes detected.", "info")
+
+        return redirect(url_for('admin_events'))
+
+    return render_template('admin/update_event.html', event=event)
+
+def notify_users_of_changes(event, changes):
+    bookings = Booking.query.filter_by(event_id=event.event_id, booking_status='confirmed').all()
+    user_emails = [booking.user.email for booking in bookings]
+
+    # Build the email content
+    change_details = "\n".join(changes)
+    subject = f"Update on Your Upcoming Event: {event.title}"
+    body = f"""Dear attendee,
+
+We want to inform you of important updates to the event you booked:
+
+{change_details}
+
+Thank you for your understanding, and we look forward to seeing you at the event!
+
+Best regards,
+Event Booking Team
+"""
+
+    # Send the email
+    for email in user_emails:
+        msg = Message(subject, recipients=[email])
+        msg.body = body
+        try:
+            mail.send(msg)
+        except Exception as e:
+            print(f"Failed to send email to {email}: {e}")
+
+
+@app.route('/admin/events/new', methods=['GET', 'POST'])
+@app.route('/admin/update_event/<int:event_id>', methods=['GET', 'POST'])
+@login_required
+def manage_event(event_id=None):
+    event = Event.query.get(event_id) if event_id else None
+
+    if request.method == 'POST':
+        # Extract form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        venue = request.form.get('venue')
+        start_date = datetime.strptime(request.form.get('start_date'), '%Y-%m-%dT%H:%M')
+        end_date = datetime.strptime(request.form.get('end_date'), '%Y-%m-%dT%H:%M')
+        booking_open_time = datetime.strptime(request.form.get('booking_open_time'), '%Y-%m-%dT%H:%M')
+        booking_close_time = datetime.strptime(request.form.get('booking_close_time'), '%Y-%m-%dT%H:%M')
+
+        if event:
+            # Update existing event
+            event.title = title
+            event.description = description
+            event.venue = venue
+            event.start_date = start_date
+            event.end_date = end_date
+            event.booking_open_time = booking_open_time
+            event.booking_close_time = booking_close_time
+            flash("Event updated successfully!", "success")
+        else:
+            # Create new event
+            event = Event(
+                title=title,
+                description=description,
+                venue=venue,
+                start_date=start_date,
+                end_date=end_date,
+                booking_open_time=booking_open_time,
+                booking_close_time=booking_close_time
+            )
+            db.session.add(event)
+            flash("Event created successfully!", "success")
+
+        db.session.commit()
+        return redirect(url_for('admin_events'))
+
+    return render_template('admin/create_event.html', event=event)
+
+# Custom filter for formatting datetime
+@app.template_filter('datetimeformat')
+def datetimeformat(value, format='%Y-%m-%d %H:%M'):
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    return value
 
 @app.route('/admin/logout')
 def admin_logout():

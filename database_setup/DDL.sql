@@ -27,7 +27,9 @@ CREATE TABLE event (
     start_date DATETIME NOT NULL,
     end_date DATETIME NOT NULL,
     total_tickets INT NOT NULL,
-    available_tickets INT NOT NULL
+    available_tickets INT NOT NULL,
+    booking_open_time DATETIME,
+    booking_close_time DATETIME
 );
 
 CREATE TABLE booking (
