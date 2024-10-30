@@ -230,8 +230,10 @@ def payment(event_id):
     # Assuming each seat belongs to a certain ticket tier
     total_amount = 0
     for seat in seats:
-        # Retrieve the ticket tier for the event and calculate the price
-        tier = TicketTier.query.join(EventTicketTier).filter(EventTicketTier.event_id == event_id).first()
+        # Retrieve the ticket tier for each seat and calculate the price
+        tier = TicketTier.query.join(EventTicketTier, EventTicketTier.tier_id == TicketTier.tier_id) \
+            .filter(EventTicketTier.event_id == event_id, TicketTier.tier_id == seat.tier_id) \
+            .first()
         if tier:
             total_amount += tier.price
 
@@ -246,7 +248,7 @@ def confirm_payment(event_id):
     if not event:
         return "Event not found", 404
 
-    use_saved_details = request.form.get('use_saved_details')
+    use_saved_details = request.form.get('use_saved_details') == "1"
 
     # card details are default if default is checked preloaded
     cardholder_name = request.form.get('cardholder_name')
@@ -297,13 +299,18 @@ def confirm_payment(event_id):
         booking_seat = BookingSeat(seat_id=seat.seat_id, booking_id=new_booking.booking_id)
         db.session.add(booking_seat)
 
-        # Step 3: Generate a Ticket for each booked seat
-        tier = TicketTier.query.join(EventTicketTier).filter(EventTicketTier.event_id == event_id).first()
+        # Retrieve the specific tier for each seat
+        tier = TicketTier.query.join(EventTicketTier).filter(
+            EventTicketTier.event_id == event_id,
+            EventTicketTier.tier_id == seat.tier_id  # Assuming seat has a tier_id attribute
+        ).first()
+
+        # Generate a Ticket with the correct tier
         new_ticket = Ticket(
             booking_id=new_booking.booking_id,
             event_id=event_id,
             seat_id=seat.seat_id,
-            tier_id=tier.tier_id  # Assuming we are associating with a specific tier
+            tier_id=tier.tier_id if tier else None  # Ensure tier_id is used if tier exists
         )
         db.session.add(new_ticket)
 
@@ -334,23 +341,18 @@ def confirm_payment(event_id):
     if use_saved_details:
         # Retrieve saved default payment details
         payment_detail = PaymentDetail.query.filter_by(user_id=user.user_id, default_payment=True).first()
-        print("payment_detail",payment_detail)
         if not payment_detail:
             flash("No saved payment details found.", "error")
             return redirect(url_for('payment', event_id=event_id))
         else:
             payment_detail_id = payment_detail.payment_detail_id
-    else:
-        print("used saved not checked")
-
-    print("payment id", payment_detail_id)
 
     # Step 6: Record the payment itself
     payment = Payment(
         booking_id=new_booking.booking_id,
         payment_detail_id=payment_detail_id,
         payment_amount=total_amount,
-        payment_status='paid'  # Assuming the payment is successful
+        payment_status='paid'
     )
     db.session.add(payment)
 

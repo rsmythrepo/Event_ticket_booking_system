@@ -25,41 +25,36 @@ VALUES
 
 INSERT INTO event_ticket_tier (event_id, tier_id, total_tickets)
 VALUES
-(1, 1, 20),  -- VIP (20 tickets)
-(1, 2, 60),  -- General Admission (60 tickets)
-(1, 3, 20),  -- Economy (20 tickets)
-(2, 1, 30),  -- VIP (30 tickets)
-(2, 2, 80),  -- General Admission (80 tickets)
-(2, 3, 40),  -- Economy (40 tickets)
-(3, 1, 50),  -- VIP (50 tickets)
-(3, 2, 100), -- General Admission (100 tickets)
-(3, 3, 50);  -- Economy (50 tickets)
+(1, 2, 5),   -- Event 1, General Admission (5 tickets)
+(2, 1, 5),   -- Event 2, VIP (5 tickets)
+(2, 2, 5),   -- Event 2, General Admission (5 tickets)
+(3, 3, 8);   -- Event 3, Economy (8 tickets)
 
-INSERT INTO seat (event_id, seat_number, is_available)
+INSERT INTO seat (event_id, seat_number, is_available, tier_id)
 VALUES
-(1, 'A1', TRUE),
-(1, 'A2', TRUE),
-(1, 'A3', TRUE),
-(1, 'A4', TRUE),
-(1, 'A5', TRUE),
-(2, 'B1', TRUE),
-(2, 'B2', TRUE),
-(2, 'B3', TRUE),
-(2, 'B4', TRUE),
-(2, 'B5', TRUE),
-(2, 'B6', TRUE),
-(2, 'B7', TRUE),
-(2, 'B8', TRUE),
-(2, 'B9', TRUE),
-(2, 'B10', TRUE),
-(3, 'C1', TRUE),
-(3, 'C2', TRUE),
-(3, 'C3', TRUE),
-(3, 'C4', TRUE),
-(3, 'C5', TRUE),
-(3, 'C6', TRUE),
-(3, 'C7', TRUE),
-(3, 'C8', TRUE);
+(1, 'A1', TRUE, 2),
+(1, 'A2', TRUE, 2),
+(1, 'A3', TRUE, 2),
+(1, 'A4', TRUE, 2),
+(1, 'A5', TRUE, 2),
+(2, 'B1', TRUE, 1),
+(2, 'B2', TRUE, 1),
+(2, 'B3', TRUE, 1),
+(2, 'B4', TRUE, 1),
+(2, 'B5', TRUE, 1),
+(2, 'B6', TRUE, 2),
+(2, 'B7', TRUE, 2),
+(2, 'B8', TRUE, 2),
+(2, 'B9', TRUE, 2),
+(2, 'B10', TRUE, 2),
+(3, 'C1', TRUE, 3),
+(3, 'C2', TRUE, 3),
+(3, 'C3', TRUE, 3),
+(3, 'C4', TRUE, 3),
+(3, 'C5', TRUE, 3),
+(3, 'C6', TRUE, 3),
+(3, 'C7', TRUE, 3),
+(3, 'C8', TRUE, 3);
 
 INSERT INTO booking (user_id, event_id, total_amount, booking_status)
 VALUES
@@ -73,8 +68,8 @@ VALUES
 
 INSERT INTO ticket (booking_id, event_id, seat_id, tier_id)
 VALUES
-(1, 1, 1, 1),
-(2, 2, 4, 2);
+(1, 1, 1, 2),
+(2, 1, 4, 2);
 
 
 INSERT INTO notification (user_id, event_id, message, notification_type, status)
