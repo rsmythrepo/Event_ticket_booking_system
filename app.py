@@ -42,6 +42,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+"""Payment Validation Checks"""
 def luhn_check(card_number):
     """Validate the credit card number using the Luhn algorithm."""
     card_number = card_number.replace(" ", "")
@@ -71,6 +72,24 @@ def validate_expiry_date(expiry_date):
     except ValueError:
         return False
 
+"""Notification emails"""
+def send_cancellation_email(user_email, booking, event):
+    msg = Message('Your Booking Has Been Canceled', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been canceled. We will process your refund shortly.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Canceled Seats: {len(booking.seats)}\n' \
+               f'If this was a mistake, please rebook your seats on the event page.\n' \
+               f'We hope to see you at another event!'
+    mail.send(msg)
+
+
+def send_refund_email(user_email, booking, event):
+    msg = Message('Your Tickets Have Been Refunded', recipients=[user_email])
+    msg.body = f'Your booking for {event.title} has been refunded. This may take up to 4 days to reach your account.\n' \
+               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
+               f'Canceled Seats: {len(booking.seats)}\n' \
+               f'We hope to see you at another event!'
+    mail.send(msg)
 
 @app.route('/')
 @login_required
@@ -511,15 +530,6 @@ def cancel_booking(booking_id):
     send_cancellation_email(booking.user.email, booking, event)
 
     return redirect(url_for('booking_management'))
-
-def send_cancellation_email(user_email, booking, event):
-    msg = Message('Your Booking Has Been Canceled', recipients=[user_email])
-    msg.body = f'Your booking for {event.title} has been canceled.\n' \
-               f'Date: {event.start_date.strftime("%Y-%m-%d %H:%M:%S")}\n' \
-               f'Canceled Seats: {len(booking.seats)}\n' \
-               f'If this was a mistake, please rebook your seats on the event page.\n' \
-               f'We hope to see you at another event!'
-    mail.send(msg)
 
 @app.route('/update_booking/<int:booking_id>', methods=['GET', 'POST'])
 @login_required
@@ -1158,6 +1168,91 @@ def manage_event(event_id=None):
         return redirect(url_for('admin_events'))
 
     return render_template('admin/create_event.html', event=event)
+
+@app.route('/admin/booking_management')
+@login_required
+def admin_booking_management():
+    # Get filter criteria from query parameters
+    status = request.args.get('status')
+    username = request.args.get('username')
+    event_title = request.args.get('event')
+
+    # Base query
+    query = Booking.query.join(User).join(Event)
+
+    # Apply filters if provided
+    if status:
+        query = query.filter(Booking.booking_status == status)
+    if username:
+        query = query.filter(User.username.ilike(f"%{username}%"))
+    if event_title:
+        query = query.filter(Event.title.ilike(f"%{event_title}%"))
+
+    # Retrieve filtered bookings
+    bookings = query.all()
+
+    # Query payments separately and map them by booking_id
+    payments = Payment.query.filter(Payment.booking_id.in_([booking.booking_id for booking in bookings])).all()
+    payments_dict = {payment.booking_id: payment for payment in payments}
+
+    return render_template('admin/admin_booking_management.html', bookings=bookings, payments=payments_dict)
+
+@app.route('/admin/cancel_booking/<int:booking_id>', methods=['POST'])
+@login_required
+def admin_cancel_booking(booking_id):
+    booking = Booking.query.get(booking_id)
+    if not booking or booking.booking_status == 'cancelled':
+        flash("Booking not found or already canceled.", "error")
+        return redirect(url_for('booking_management'))
+
+    # Update booking status to cancelled
+    booking.booking_status = 'cancelled'
+    db.session.add(booking)
+
+    # Mark the seats as available again
+    for seat in booking.seats:
+        seat.is_available = True
+        db.session.add(seat)
+
+    # Update available tickets in the event
+    event = Event.query.get(booking.event_id)
+    event.available_tickets = Seat.query.filter_by(event_id=booking.event_id, is_available=True).count()
+    db.session.add(event)
+
+    # Extend booking close time if tickets are now available
+    if event.available_tickets > 0:
+        event.booking_close_time = max(event.booking_close_time, datetime.now() + timedelta(days=1))
+
+    db.session.commit()
+    flash("Booking has been canceled and seats are available for booking.", "success")
+
+    # Send cancellation email to the user
+    send_cancellation_email(booking.user.email, booking, event)
+
+    return redirect(url_for('admin_booking_management'))
+
+@app.route('/admin/issue_refund/<int:booking_id>', methods=['POST'])
+@login_required
+def admin_issue_refund(booking_id):
+    booking = Booking.query.get(booking_id)
+    event = Event.query.get(booking.event_id)
+
+    if booking and booking.booking_status == 'cancelled':
+        payment = Payment.query.filter_by(booking_id=booking_id).first()
+        if payment:
+            payment.payment_status = 'refunded'
+            db.session.commit()
+            flash('Refund has been issued successfully.', 'success')
+        else:
+            flash('No payment found for this booking.', 'error')
+    else:
+        flash('Refund could not be processed.', 'error')
+
+    # Send cancellation email to the user
+    send_refund_email(booking.user.email, booking, event)
+
+    return redirect(url_for('admin_booking_management'))
+
 
 # Custom filter for formatting datetime
 @app.template_filter('datetimeformat')
