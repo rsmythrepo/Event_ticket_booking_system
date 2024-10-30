@@ -66,8 +66,42 @@
                         View Sales
                     </button>
                 </td>
+                  <td>
+                    <button class="btn btn-info" data-toggle="modal" data-target="#availableSeatsModal{{ loop.index }}" onclick="fetchAvailableSeats({{ event.event_id }}, {{ loop.index }})">
+                        Show Seats
+                    </button>
+                </td>
             </tr>
+            <div class="modal fade" id="availableSeatsModal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="availableSeatsModalLabel{{ loop.index }}" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="availableSeatsModalLabel{{ loop.index }}">Available Seats for {{ event.title }}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="seat-map mb-4 text-center">
+                                <div class="scene">
+                                    <div class="stage">Stage</div>
+                                </div>
 
+                                <div class="d-flex flex-wrap justify-content-center" id="seat-container{{ loop.index }}"></div>
+
+                                <!-- Placeholder for available seats count -->
+                                <div>
+                                    <strong>Available Seats:</strong> <span id="availableSeatsCount{{ loop.index }}">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Modal -->
             <div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ loop.index }}" aria-hidden="true">
                 <div class="modal-dialog" role="document">
@@ -94,124 +128,9 @@
 </div>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
 <script>
-    const ticketSalesCtx = document.getElementById('ticketSalesChart').getContext('2d');
-    const ticketSalesGradient = ticketSalesCtx.createLinearGradient(0, 0, 0, 400);
-    ticketSalesGradient.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
-    ticketSalesGradient.addColorStop(1, 'rgba(75, 192, 192, 0.3)');
-
-    const ticketSalesChart = new Chart(ticketSalesCtx, {
-        type: 'line',
-        data: {
-            labels: {{ tickets_sold_chart_labels | tojson | safe }},
-            datasets: [{
-                label: 'Tickets Sold',
-                data: {{ tickets_sold_chart_data | tojson | safe }},
-                backgroundColor: ticketSalesGradient,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.1
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333'
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(54, 162, 235, 0.8)',
-                    borderWidth: 1
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#666'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.3)',
-                        borderDash: [5, 5]
-                    },
-                    ticks: {
-                        color: '#666'
-                    }
-                }
-            }
-        }
-    });
-
-    const ctxRevenue = document.getElementById('revenueChart').getContext('2d');
-    const gradientRevenue = ctxRevenue.createLinearGradient(0, 0, 0, 400);
-    gradientRevenue.addColorStop(0, 'rgba(255, 99, 132, 0.8)');
-    gradientRevenue.addColorStop(1, 'rgba(255, 159, 64, 0.3)');
-
-    const revenueChart = new Chart(ctxRevenue, {
-        type: 'line',
-        data: {
-            labels: {{ revenue_chart_labels | tojson | safe }},
-            datasets: [{
-                label: 'Revenue Generated',
-                data: {{ revenue_chart_data | tojson | safe }},
-                backgroundColor: gradientRevenue,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5,
-                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: '#333'
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderColor: 'rgba(255, 99, 132, 0.8)',
-                    borderWidth: 1
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#666'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(200, 200, 200, 0.3)',
-                        borderDash: [5, 5]
-                    },
-                    ticks: {
-                        color: '#666'
-                    }
-                }
-            }
-        }
-    });
+    const ticketsSoldChartLabels = {{ tickets_sold_chart_labels | tojson | safe }};
+    const ticketsSoldChartData = {{ tickets_sold_chart_data | tojson | safe }};
+    const revenueChartLabels = {{ revenue_chart_labels | tojson | safe }};
+    const revenueChartData = {{ revenue_chart_data | tojson | safe }};
 </script>
 {% endblock %}

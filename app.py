@@ -793,6 +793,7 @@ def sales_report():
         total_revenue_ev = sum(revenue_data)
 
         event_data.append({
+            'event_id': event.event_id,
             'title': event.title,
             'tickets_sold': total_tickets_sold_ev,
             'revenue': total_revenue_ev or 0,
@@ -829,7 +830,16 @@ def sales_report():
                            tickets_sold_chart_data=tickets_sold_data,
                            revenue_chart_labels=labels,
                            revenue_chart_data=revenue_data)
-
+@app.route('/admin/event_available_seats/<int:event_id>', methods=['GET'])
+def get_available_seats(event_id):
+    seats = (
+        db.session.query(Seat.seat_number, Seat.is_available)
+        .filter(Seat.event_id == event_id)
+        .order_by(Seat.seat_number)
+        .all()
+    )
+    seat_data = [{'seat_number': seat.seat_number, 'is_available': seat.is_available} for seat in seats]
+    return jsonify({'seats': seat_data})
 @app.route('/admin/events/new', methods=['GET', 'POST'])
 def create_event():
     if request.method == 'POST':
