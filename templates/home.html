@@ -5,22 +5,21 @@
 {% block content %}
 <h1>Browse Events</h1>
 <form class="row g-3" method="GET" action="{{ url_for('homepage') }}">
-    <!-- Existing Price Range and Date Filters -->
     <div class="col-md-4">
-        <label for="priceFrom" class="form-label">Price Range From</label>
-        <input type="number" class="form-control" id="priceFrom" name="price_from" placeholder="Min price" value="{{ request.args.get('price_from', '') }}">
-    </div>
-    <div class="col-md-4">
-        <label for="priceUntil" class="form-label">Price Range Until</label>
+        <!-- Price Range Filters -->
+        <label for="priceFrom" class="form-label">Price Range</label>
+        <input type="number" class="form-control mb-2" id="priceFrom" name="price_from" placeholder="Min price" value="{{ request.args.get('price_from', '') }}">
         <input type="number" class="form-control" id="priceUntil" name="price_until" placeholder="Max price" value="{{ request.args.get('price_until', '') }}">
     </div>
+
     <div class="col-md-4">
+        <!-- Date Filter -->
         <label for="date" class="form-label">Date</label>
         <input type="date" class="form-control" id="date" name="date" value="{{ request.args.get('date', '') }}">
     </div>
 
-    <!-- Venue Filter -->
     <div class="col-md-4">
+        <!-- Venue Filter -->
         <label for="venue" class="form-label">Venue</label>
         <select class="form-select d-none" id="venue" name="venue" multiple>
             {% for venue in venues %}
@@ -32,13 +31,14 @@
     </div>
 
     <div class="col-12">
-        <button type="submit" class="btn btn-primary">Search</button>
+        <!-- Search Button -->
+        <button type="submit" class="btn btn-primary mt-3">Search</button>
     </div>
 </form>
 
 <!-- Currently Available Events Section -->
 <div class="row mt-4">
-    <h2>Currently Available Events (Next 3 Months)</h2>
+    <h2>Upcoming Events</h2>
     {% if current_events %}
         {% for event in current_events %}
             <div class="event-item mb-4">
@@ -75,7 +75,7 @@
 
 <!-- Future Events Section -->
 <div class="row mt-4">
-    <h2>Future Events (Beyond 3 Months)</h2>
+    <h2>Future Events</h2>
     {% if future_events %}
         {% for event in future_events %}
             <div class="event-item mb-4">

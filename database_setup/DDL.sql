@@ -61,9 +61,9 @@ CREATE TABLE event_ticket_tier (
 CREATE TABLE seat (
     seat_id INT AUTO_INCREMENT PRIMARY KEY,
     event_id INT NOT NULL,
+    tier_id INT,
     seat_number VARCHAR(10) NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
-    tier_id INT,
     FOREIGN KEY (event_id) REFERENCES event(event_id),
     FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id),
     UNIQUE(event_id, seat_number)
@@ -105,7 +105,7 @@ CREATE TABLE payment_detail (
     payment_detail_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     card_type ENUM('Visa', 'MasterCard', 'AmEx', 'Discover') NOT NULL,
-    card_number VARCHAR(20) NOT NULL,
+    card_number UNIQUE VARCHAR(20) NOT NULL,
     cardholder_name VARCHAR(100) NOT NULL,
     expiration_date DATE NOT NULL,
     billing_address TEXT NOT NULL,

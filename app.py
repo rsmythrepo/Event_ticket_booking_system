@@ -91,6 +91,44 @@ def send_refund_email(user_email, booking, event):
                f'We hope to see you at another event!'
     mail.send(msg)
 
+def send_upcoming_event_promotions(events):
+    # Fetch all users to send promotional emails
+    users = db.session.query(User).all()
+    user_emails = [user.email for user in users]
+
+    # Check if there are events to promote
+    if not events:
+        print("No upcoming events to promote.")
+        return
+
+    # Send promotional emails for each event
+    for event in events:
+        subject = f"Upcoming Event: {event.title}"
+        body = f"""Hello,
+
+We have an exciting upcoming event for you:
+
+Event: {event.title}
+Date: {event.start_date.strftime('%Y-%m-%d %H:%M')}
+Venue: {event.venue}
+
+Bookings open on {event.booking_open_time.strftime('%Y-%m-%d %H:%M')}.
+Don’t miss out on securing your spot!
+
+Best Regards,
+Event Booking Team
+"""
+
+        # Send the email to each user
+        for email in user_emails:
+            msg = Message(subject, recipients=[email])
+            msg.body = body
+            try:
+                mail.send(msg)
+                print(f"Promotional email sent to {email} for event {event.title}")
+            except Exception as e:
+                print(f"Failed to send promotional email to {email}: {e}")
+
 @app.route('/')
 @login_required
 def homepage():
@@ -160,44 +198,6 @@ def homepage():
 
     # Render the template with separated events
     return render_template('home.html', current_events=current_events, future_events=future_events, venues=venues)
-
-def send_upcoming_event_promotions(events):
-    # Fetch all users to send promotional emails
-    users = db.session.query(User).all()
-    user_emails = [user.email for user in users]
-
-    # Check if there are events to promote
-    if not events:
-        print("No upcoming events to promote.")
-        return
-
-    # Send promotional emails for each event
-    for event in events:
-        subject = f"Upcoming Event: {event.title}"
-        body = f"""Hello,
-
-We have an exciting upcoming event for you:
-
-Event: {event.title}
-Date: {event.start_date.strftime('%Y-%m-%d %H:%M')}
-Venue: {event.venue}
-
-Bookings open on {event.booking_open_time.strftime('%Y-%m-%d %H:%M')}.
-Don’t miss out on securing your spot!
-
-Best Regards,
-Event Booking Team
-"""
-
-        # Send the email to each user
-        for email in user_emails:
-            msg = Message(subject, recipients=[email])
-            msg.body = body
-            try:
-                mail.send(msg)
-                print(f"Promotional email sent to {email} for event {event.title}")
-            except Exception as e:
-                print(f"Failed to send promotional email to {email}: {e}")
 
 
 @app.route('/event/<int:event_id>')
