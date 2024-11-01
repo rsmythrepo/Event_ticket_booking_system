@@ -16,6 +16,7 @@ from __init__ import app, db
 from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
 from flask import request, jsonify
+from cryptography.fernet import Fernet
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -25,6 +26,10 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USERNAME'] = 'askhatabi@gmail.com'  # Replace with your email
 app.config['MAIL_PASSWORD'] = 'pyegxiaboyccgymm'  # Replace with your password or App Password
 app.config['MAIL_DEFAULT_SENDER'] = ('Booking System', 'askhatabi@gmail.com')  # The sender name and email
+
+# Loading encryption key
+key = os.getenv('ENCRYPTION_KEY')
+cipher_suite = Fernet(key)
 
 # Initialize Mail
 mail = Mail(app)
@@ -71,6 +76,17 @@ def validate_expiry_date(expiry_date):
         return exp_date >= current_date.replace(day=1)
     except ValueError:
         return False
+
+def encrypt_card_number(card_number: str) -> bytes:
+    encrypted_number = cipher_suite.encrypt(card_number.encode())
+    return encrypted_number
+
+def decrypt_card_number_last_4_digits(encrypted_number: bytes) -> str:
+    decrypted_number = cipher_suite.decrypt(encrypted_number).decode()
+    return decrypted_number[-4:]
+def decrypt_card_number(encrypted_number: bytes) -> str:
+    decrypted_number = cipher_suite.decrypt(encrypted_number).decode()
+    return decrypted_number
 
 """Notification emails"""
 def send_cancellation_email(user_email, booking, event):
@@ -188,7 +204,7 @@ def homepage():
         ).all()
 
         # Send promotional emails for these upcoming events
-        send_upcoming_event_promotions(upcoming_events_for_promotion)
+        #send_upcoming_event_promotions(upcoming_events_for_promotion)
 
     except Exception as e:
         flash(f"Error fetching events: {str(e)}", "error")
@@ -280,6 +296,9 @@ def payment(event_id):
     default_payment_detail = None
     if user_id:
         default_payment_detail = PaymentDetail.query.filter_by(user_id=user_id, default_payment=True).first()
+
+        if default_payment_detail:
+            default_payment_detail.card_number = decrypt_card_number(default_payment_detail.card_number)
 
     # Retrieve the selected seat numbers from the form
     selected_seats = request.form.get('selected_seats')
@@ -393,12 +412,13 @@ def confirm_payment(event_id):
     # Step 5: Add Payment Details for the user
     if save_payment_details:
         expiration_date_str = expiration_date + '-01'
+        encrypted_card_number = encrypt_card_number(card_number)
         # Update all other payment details for this user to not be default
         PaymentDetail.query.filter_by(user_id=user.user_id).update({'default_payment': False})
         payment_detail = PaymentDetail(
             user_id=user.user_id,
             card_type=card_type,
-            card_number=card_number,
+            card_number=encrypted_card_number,
             cardholder_name=cardholder_name,
             expiration_date=expiration_date_str,
             billing_address=billing_address,
@@ -593,6 +613,10 @@ def profile():
 
     user = User.query.get(user_id)
     payment_details = PaymentDetail.query.filter_by(user_id=user_id).all()
+
+    # Decrypt only the last 4 digits of each card number for display
+    for payment in payment_details:
+        payment.card_number = decrypt_card_number_last_4_digits(payment.card_number)
 
     return render_template('profile.html', user=user, payment_details=payment_details)
 
