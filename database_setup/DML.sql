@@ -1,7 +1,5 @@
 
 
--- generated data for testing
-USE event_bookings;
 INSERT INTO role (role_name)
 VALUES ('admin'), ('user');
 
@@ -13,9 +11,16 @@ VALUES
 
 INSERT INTO event (title, description, venue, start_date, end_date, total_tickets, available_tickets, booking_open_time, booking_close_time)
 VALUES
-('Concert A', 'A live concert by Band X', 'Stadium 1', '2024-11-20 19:00:00', '2024-11-20 22:00:00', 5, 5, '2024-10-27 00:00:00', '2024-11-20 18:00:00'),
-('Theater Play B', 'A famous drama play', 'Theater 2', '2024-12-01 18:00:00', '2024-12-01 21:00:00', 10, 10, '2024-10-27 00:00:00', '2024-12-01 17:00:00'),
-('Sports Match C', 'Football match between Team A and Team B', 'Arena 3', '2024-12-15 15:00:00', '2024-12-15 17:00:00', 8, 8, '2024-10-27 00:00:00', '2024-12-15 14:00:00');
+('Rock Night Live', 'A high-energy concert featuring top rock bands.', 'Downtown Arena', '2024-12-15 19:00:00', '2024-12-15 23:00:00', 500, 500, '2024-11-01 10:00:00', '2024-12-15 23:00:00'),
+('Jazz Evening', 'An intimate jazz performance with renowned musicians.', 'City Jazz Club', '2024-12-20 18:00:00', '2024-12-20 21:00:00', 200, 200, '2024-11-01 09:00:00', '2024-12-20 21:00:00'),
+('Pop Music Festival', 'A full-day event with popular pop artists.', 'Open Air Park', '2025-01-10 14:00:00', '2025-01-10 22:00:00', 1000, 1000, '2024-11-15 10:00:00', '2025-01-10 22:00:00'),
+('Classical Night', 'A symphony orchestra performance featuring famous classical pieces.', 'Grand Concert Hall', '2025-01-25 20:00:00', '2025-01-25 22:30:00', 300, 300, '2024-12-01 09:00:00', '2025-01-25 22:30:00'),
+('Electronic Dance Festival', 'A night of dance and electronic music with top DJs.', 'City Stadium', '2025-02-05 20:00:00', '2025-02-05 02:00:00', 1500, 1500, '2024-12-01 10:00:00', '2025-02-05 02:00:00'),
+('Indie Rock Showcase', 'Live performances by emerging indie rock bands.', 'Underground Club', '2025-02-15 19:00:00', '2025-02-15 23:30:00', 250, 250, '2024-12-10 08:00:00', '2025-02-15 23:30:00'),
+('Country Music Night', 'Enjoy live country music with popular artists.', 'Riverside Amphitheater', '2025-02-25 18:30:00', '2025-02-25 22:00:00', 400, 400, '2024-12-01 09:00:00', '2025-02-25 22:00:00'),
+('Hip-Hop Bash', 'A concert featuring top hip-hop and rap artists.', 'City Sports Arena', '2025-01-20 19:00:00', '2025-01-20 23:00:00', 800, 800, '2024-11-15 10:00:00', '2025-01-20 23:00:00'),
+('Reggae Vibes', 'A relaxing night of reggae music with live performances.', 'Beachside Venue', '2024-12-01 17:00:00', '2024-12-01 21:00:00', 350, 350, '2024-11-01 08:00:00', '2024-12-01 21:00:00'),
+('Metal Night', 'An electrifying performance by famous metal bands.', 'Arena X', '2024-12-05 20:00:00', '2024-12-05 23:59:00', 600, 600, '2024-11-01 09:00:00', '2024-12-05 23:59:00');
 
 INSERT INTO ticket_tier (tier_name, price)
 VALUES
@@ -25,18 +30,34 @@ VALUES
 
 INSERT INTO event_ticket_tier (event_id, tier_id, total_tickets)
 VALUES
-(1, 2, 5),   -- Event 1, General Admission (5 tickets)
+(1, 2, 10),  -- Event 1, General Admission (10 tickets)
 (2, 1, 5),   -- Event 2, VIP (5 tickets)
-(2, 2, 5),   -- Event 2, General Admission (5 tickets)
-(3, 3, 8);   -- Event 3, Economy (8 tickets)
+(2, 2, 5),  -- Event 2, General Admission (5 tickets)
+(3, 2, 8),   -- Event 3, General Admission (8 tickets)
+(4, 1, 2),   -- Event 4, VIP (2 tickets)
+(4, 3, 3),   -- Event 4, Economy (3 tickets)
+(5, 2, 5),   -- Event 5, General Admission (5 tickets)
+(6, 1, 4),   -- Event 6, VIP (4 tickets)
+(7, 2, 5),   -- Event 7, General Admission (5 tickets)
+(8, 1, 4),   -- Event 8, VIP (4 tickets)
+(9, 3, 4),   -- Event 9, Economy (4 tickets)
+(10, 2, 4);  -- Event 10, General Admission (4 tickets)
 
 INSERT INTO seat (event_id, seat_number, is_available, tier_id)
 VALUES
+-- Event 1 Seats (General Admission)
 (1, 'A1', TRUE, 2),
 (1, 'A2', TRUE, 2),
 (1, 'A3', TRUE, 2),
 (1, 'A4', TRUE, 2),
 (1, 'A5', TRUE, 2),
+(1, 'A6', TRUE, 2),
+(1, 'A7', TRUE, 2),
+(1, 'A8', TRUE, 2),
+(1, 'A9', TRUE, 2),
+(1, 'A10', TRUE, 2),
+
+-- Event 2 Seats (VIP and General Admission)
 (2, 'B1', TRUE, 1),
 (2, 'B2', TRUE, 1),
 (2, 'B3', TRUE, 1),
@@ -47,14 +68,61 @@ VALUES
 (2, 'B8', TRUE, 2),
 (2, 'B9', TRUE, 2),
 (2, 'B10', TRUE, 2),
-(3, 'C1', TRUE, 3),
-(3, 'C2', TRUE, 3),
-(3, 'C3', TRUE, 3),
-(3, 'C4', TRUE, 3),
-(3, 'C5', TRUE, 3),
-(3, 'C6', TRUE, 3),
-(3, 'C7', TRUE, 3),
-(3, 'C8', TRUE, 3);
+
+-- Event 3 Seats (General Admission)
+(3, 'C1', TRUE, 2),
+(3, 'C2', TRUE, 2),
+(3, 'C3', TRUE, 2),
+(3, 'C4', TRUE, 2),
+(3, 'C5', TRUE, 2),
+(3, 'C6', TRUE, 2),
+(3, 'C7', TRUE, 2),
+(3, 'C8', TRUE, 2),
+
+-- Event 4 Seats (VIP and Economy)
+(4, 'D1', TRUE, 1),
+(4, 'D2', TRUE, 1),
+(4, 'D3', TRUE, 3),
+(4, 'D4', TRUE, 3),
+(4, 'D5', TRUE, 3),
+
+-- Event 5 Seats (General Admission)
+(5, 'E1', TRUE, 2),
+(5, 'E2', TRUE, 2),
+(5, 'E3', TRUE, 2),
+(5, 'E4', TRUE, 2),
+(5, 'E5', TRUE, 2),
+
+-- Event 6 Seats (VIP)
+(6, 'F1', TRUE, 1),
+(6, 'F2', TRUE, 1),
+(6, 'F3', TRUE, 1),
+(6, 'F4', TRUE, 1),
+
+-- Event 7 Seats (General Admission)
+(7, 'G1', TRUE, 2),
+(7, 'G2', TRUE, 2),
+(7, 'G3', TRUE, 2),
+(7, 'G4', TRUE, 2),
+(7, 'G5', TRUE, 2),
+
+-- Event 8 Seats (VIP)
+(8, 'H1', TRUE, 1),
+(8, 'H2', TRUE, 1),
+(8, 'H3', TRUE, 1),
+(8, 'H4', TRUE, 1),
+
+-- Event 9 Seats (Economy)
+(9, 'I1', TRUE, 3),
+(9, 'I2', TRUE, 3),
+(9, 'I3', TRUE, 3),
+(9, 'I4', TRUE, 3),
+
+-- Event 10 Seats (General Admission)
+(10, 'J1', TRUE, 2),
+(10, 'J2', TRUE, 2),
+(10, 'J3', TRUE, 2),
+(10, 'J4', TRUE, 2);
 
 INSERT INTO booking (user_id, event_id, total_amount, booking_status)
 VALUES
@@ -74,8 +142,8 @@ VALUES
 
 INSERT INTO notification (user_id, event_id, message, notification_type, status)
 VALUES
-(1, 1, 'Your booking for Concert A is confirmed!', 'email', 'sent'),
-(2, 2, 'Your booking for Theater Play B is confirmed!', 'email', 'sent');
+(1, 1, 'Your booking is confirmed!', 'email', 'sent'),
+(2, 2, 'Your booking is confirmed!', 'email', 'sent');
 
 -- Update seat availability to FALSE for all seats in the ticket table
 UPDATE seat

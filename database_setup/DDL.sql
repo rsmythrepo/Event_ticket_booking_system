@@ -1,7 +1,4 @@
 
-CREATE DATABASE event_bookings;
-USE event_bookings;
-
 CREATE TABLE role (
     role_id INT AUTO_INCREMENT PRIMARY KEY,
     role_name VARCHAR(50) NOT NULL
@@ -16,7 +13,7 @@ CREATE TABLE `user` (
     password_hash VARCHAR(255) NOT NULL,
     role_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_id) REFERENCES role(role_id)
+    FOREIGN KEY (role_id) REFERENCES role(role_id) ON DELETE CASCADE
 );
 
 CREATE TABLE event (
@@ -39,8 +36,8 @@ CREATE TABLE booking (
     total_amount DECIMAL(10, 2) NOT NULL,
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     booking_status ENUM('confirmed', 'cancelled') DEFAULT 'confirmed',
-    FOREIGN KEY (user_id) REFERENCES `user`(user_id),
-    FOREIGN KEY (event_id) REFERENCES event(event_id)
+    FOREIGN KEY (user_id) REFERENCES `user`(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE
 );
 
 CREATE TABLE ticket_tier (
@@ -54,18 +51,18 @@ CREATE TABLE event_ticket_tier (
     tier_id INT NOT NULL,
     total_tickets INT NOT NULL,
     PRIMARY KEY (event_id, tier_id),
-    FOREIGN KEY (event_id) REFERENCES event(event_id),
-    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id)
+    FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id) ON DELETE CASCADE
 );
 
 CREATE TABLE seat (
     seat_id INT AUTO_INCREMENT PRIMARY KEY,
     event_id INT NOT NULL,
+    tier_id INT,
     seat_number VARCHAR(10) NOT NULL,
     is_available BOOLEAN DEFAULT TRUE,
-    tier_id INT,
-    FOREIGN KEY (event_id) REFERENCES event(event_id),
-    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id),
+    FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id) ON DELETE SET NULL,
     UNIQUE(event_id, seat_number)
 );
 
@@ -73,8 +70,8 @@ CREATE TABLE booking_seat (
     seat_id INT NOT NULL,
     booking_id INT NOT NULL,
     PRIMARY KEY (seat_id, booking_id),
-    FOREIGN KEY (seat_id) REFERENCES seat(seat_id),
-    FOREIGN KEY (booking_id) REFERENCES booking(booking_id)
+    FOREIGN KEY (seat_id) REFERENCES seat(seat_id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES booking(booking_id) ON DELETE CASCADE
 );
 
 CREATE TABLE ticket (
@@ -83,10 +80,10 @@ CREATE TABLE ticket (
     event_id INT NOT NULL,
     seat_id INT NOT NULL,
     tier_id INT NOT NULL,
-    FOREIGN KEY (booking_id) REFERENCES booking(booking_id),
-    FOREIGN KEY (event_id) REFERENCES event(event_id),
-    FOREIGN KEY (seat_id) REFERENCES seat(seat_id),
-    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id)
+    FOREIGN KEY (booking_id) REFERENCES booking(booking_id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (seat_id) REFERENCES seat(seat_id) ON DELETE CASCADE,
+    FOREIGN KEY (tier_id) REFERENCES ticket_tier(tier_id) ON DELETE CASCADE
 );
 
 CREATE TABLE notification (
@@ -97,20 +94,20 @@ CREATE TABLE notification (
     notification_type TEXT,
     notification_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('sent', 'pending') DEFAULT 'pending',
-    FOREIGN KEY (user_id) REFERENCES `user`(user_id),
-    FOREIGN KEY (event_id) REFERENCES event(event_id)
+    FOREIGN KEY (user_id) REFERENCES `user`(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE
 );
 
 CREATE TABLE payment_detail (
     payment_detail_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     card_type ENUM('Visa', 'MasterCard', 'AmEx', 'Discover') NOT NULL,
-    card_number VARCHAR(20) NOT NULL,
+    card_number VARBINARY(255) NOT NULL,
     cardholder_name VARCHAR(100) NOT NULL,
     expiration_date DATE NOT NULL,
     billing_address TEXT NOT NULL,
     default_payment BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES `user`(user_id)
+    FOREIGN KEY (user_id) REFERENCES `user`(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE payment (
@@ -120,6 +117,6 @@ CREATE TABLE payment (
     payment_amount DECIMAL(10, 2) NOT NULL,
     payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (booking_id) REFERENCES booking(booking_id),
-    FOREIGN KEY (payment_detail_id) REFERENCES payment_detail(payment_detail_id)
+    FOREIGN KEY (booking_id) REFERENCES booking(booking_id) ON DELETE CASCADE,
+    FOREIGN KEY (payment_detail_id) REFERENCES payment_detail(payment_detail_id) ON DELETE SET NULL
 );

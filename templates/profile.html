@@ -30,7 +30,7 @@
                     <tr>
                         <td>{{ payment.cardholder_name }}</td>
                         <td>{{ payment.card_type }}</td>
-                        <td>..{{ payment.card_number[-4:] | safe }}</td>
+                        <td>..{{ payment.card_number | safe }}</td>
                         <td>{{ payment.billing_address }}</td>
                         <td>
                             <input type="radio" name="default_payment" value="{{ payment.payment_detail_id }}"

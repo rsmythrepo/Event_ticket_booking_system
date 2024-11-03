@@ -28,10 +28,15 @@ h1 {
 
 
 .btn-primary {
-    background-color: #00796b;
+    background-image: linear-gradient(to right, #39beed, #28fa68); /* Blue to green gradient */
     border: none;
-    color: #ffffff;
+    color: #000000;
+    border-radius: 20px; /* Rounded corners */
+    font-size: 18px; /* Larger text */
     transition: background-color 0.3s ease, transform 0.2s ease;
+    background-size: 200% auto; /* Ensures the gradient covers the button */
+    background-position: left center; /* Initial position */
+    padding: 10px 20px; /* Optional: Adjust padding for better shape */
 }
 
  .btn-primary:hover {
@@ -51,7 +56,7 @@ a:hover {
     }
 
     .navbar-nav .nav-link:hover {
-        color: #f7b733;
+        color: #21bf51;
         background-color: rgba(255, 255, 255, 0.1);
         border-radius: 5px;
     }
@@ -101,7 +106,7 @@ a:hover {
 .stage {
     width: 100%;
     height: 50px;
-    background-color: #ffcc00;
+    background-color: #21bf51;
     margin: 20px auto;
     border: 1px solid #000;
     text-align: center;
