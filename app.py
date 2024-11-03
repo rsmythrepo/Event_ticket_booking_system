@@ -3,8 +3,8 @@ import os
 import tempfile
 from datetime import datetime, timedelta
 from io import BytesIO
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from flask_session import Session
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from sqlalchemy import func
@@ -18,6 +18,8 @@ from flask_mail import Mail, Message
 from flask import request, jsonify
 from cryptography.fernet import Fernet
 
+app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem to persist data across server restarts
+Session(app)
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
@@ -107,12 +109,27 @@ def send_refund_email(user_email, booking, event):
                f'We hope to see you at another event!'
     mail.send(msg)
 
+# Initialize last sent time in memory
+last_sent_time = None
 def send_upcoming_event_promotions(events):
+    now = datetime.now()
+
+    # Retrieve last sent time from session
+    last_sent_time = session.get('last_sent_time')
+    if last_sent_time:
+        last_sent_time = datetime.fromisoformat(last_sent_time)
+        # Check if a week has passed since last sent time
+        if now - last_sent_time < timedelta(weeks=1):
+            print("Promotional emails were sent recently. Skipping this run.")
+            return
+
+    # Update the session with the current time after sending emails
+    session['last_sent_time'] = now.isoformat()
+
     # Fetch all users to send promotional emails
     users = db.session.query(User).all()
     user_emails = [user.email for user in users]
 
-    # Check if there are events to promote
     if not events:
         print("No upcoming events to promote.")
         return
@@ -122,20 +139,19 @@ def send_upcoming_event_promotions(events):
         subject = f"Upcoming Event: {event.title}"
         body = f"""Hello,
 
-We have an exciting upcoming event for you:
+    We have an exciting upcoming event for you:
 
-Event: {event.title}
-Date: {event.start_date.strftime('%Y-%m-%d %H:%M')}
-Venue: {event.venue}
+    Event: {event.title}
+    Date: {event.start_date.strftime('%Y-%m-%d %H:%M')}
+    Venue: {event.venue}
 
-Bookings open on {event.booking_open_time.strftime('%Y-%m-%d %H:%M')}.
-Don’t miss out on securing your spot!
+    Bookings open on {event.booking_open_time.strftime('%Y-%m-%d %H:%M')}.
+    Don’t miss out on securing your spot!
 
-Best Regards,
-Event Booking Team
-"""
+    Best Regards,
+    Event Booking Team
+    """
 
-        # Send the email to each user
         for email in user_emails:
             msg = Message(subject, recipients=[email])
             msg.body = body
@@ -144,6 +160,8 @@ Event Booking Team
                 print(f"Promotional email sent to {email} for event {event.title}")
             except Exception as e:
                 print(f"Failed to send promotional email to {email}: {e}")
+
+    print("Promotional emails sent successfully.")
 
 @app.route('/')
 @login_required
