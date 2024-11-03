@@ -277,7 +277,6 @@ a.link:hover {
 }
 
 
-/* Flash Messages */
 .alert {
     padding: 15px;
     margin-bottom: 15px;
@@ -288,22 +287,20 @@ a.link:hover {
 }
 
 .alert-success {
-    background-color: #28a745; /* Green for success */
+    background-color: #28a745;
 }
 
 .alert-error {
-    background-color: #dc3545; /* Red for error */
+    background-color: #dc3545;
 }
 
 .alert-info {
-    background-color: #17a2b8; /* Blue for info */
+    background-color: #17a2b8;
 }
 
 .alert-warning {
-    background-color: #ffc107; /* Yellow for warning */
+    background-color: #ffc107;
 }
-
-/* Close button styling */
 .alert .close {
     margin-left: 10px;
     font-weight: bold;
@@ -311,15 +308,11 @@ a.link:hover {
     color: #fff;
     cursor: pointer;
 }
-
-/* Flash message container */
 .flash-container {
     max-width: 600px;
     margin: 0 auto;
     text-align: center;
 }
-
-/* Additional Styling */
 .flash-container .alert {
     display: flex;
     align-items: center;
