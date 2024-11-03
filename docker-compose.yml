@@ -11,6 +11,10 @@ services:
     environment:
       - FLASK_APP=app.py
       - ENCRYPTION_KEY=CCbTLCkE3XcX-dUUoV1RcXNJiBchflFe1ROvnELcVJ8=
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_HOST=mysql-db  # Use the service name for Docker networking
+      - DB_NAME=event_bookings
     volumes:
       - .:/app
     networks:
