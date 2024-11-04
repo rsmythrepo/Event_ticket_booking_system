@@ -9,7 +9,7 @@ services:
     depends_on:
       - mysql-db
     environment:
-      - FLASK_APP=app.py
+      - FLASK_APP=run.py
       - ENCRYPTION_KEY=CCbTLCkE3XcX-dUUoV1RcXNJiBchflFe1ROvnELcVJ8=
       - DB_USER=root
       - DB_PASSWORD=root
