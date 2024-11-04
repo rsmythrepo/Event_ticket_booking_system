@@ -1,33 +1,19 @@
-
 import os
 import tempfile
-from datetime import datetime, timedelta
 from io import BytesIO
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
-from flask_session import Session
+from flask import render_template, redirect, url_for, flash, session, make_response
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 import qrcode
 from functools import wraps
-from sqlalchemy.orm.attributes import flag_modified
-from __init__ import app, db
-from ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
+from app import create_app, db
+from Event_ticket_booking_system.app.ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
-from flask import request, jsonify
+from flask import request
 from cryptography.fernet import Fernet
 
-app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem to persist data across server restarts
-Session(app)
-# Configure Flask-Mail
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USERNAME'] = 'askhatabi@gmail.com'  # Replace with your email
-app.config['MAIL_PASSWORD'] = 'pyegxiaboyccgymm'  # Replace with your password or App Password
-app.config['MAIL_DEFAULT_SENDER'] = ('Booking System', 'askhatabi@gmail.com')  # The sender name and email
+app = create_app()
 
 # Loading encryption key
 key = os.getenv('ENCRYPTION_KEY')
@@ -1311,4 +1297,4 @@ def admin_logout():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

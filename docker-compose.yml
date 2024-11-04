@@ -9,24 +9,27 @@ services:
     depends_on:
       - mysql-db
     environment:
-      - FLASK_APP=app.py
+      - FLASK_APP=run.py
+      - ENCRYPTION_KEY=CCbTLCkE3XcX-dUUoV1RcXNJiBchflFe1ROvnELcVJ8=
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_HOST=mysql-db  # Use the service name for Docker networking
+      - DB_NAME=event_bookings
     volumes:
       - .:/app
     networks:
       - app-network
 
   mysql-db:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: event_bookings
-      MYSQL_USER: your_user
-      MYSQL_PASSWORD: your_password
     volumes:
-      - ./Database\ Setup:/docker-entrypoint-initdb.d
+      - "./database_setup/sql_setup:/docker-entrypoint-initdb.d"
     ports:
-      - "3304:3304"
+      - "3306:3306"
     networks:
       - app-network
 

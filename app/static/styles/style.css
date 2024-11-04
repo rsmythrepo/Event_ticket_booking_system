@@ -277,3 +277,44 @@ a.link:hover {
 }
 
 
+.alert {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+}
+
+.alert-success {
+    background-color: #28a745;
+}
+
+.alert-error {
+    background-color: #dc3545;
+}
+
+.alert-info {
+    background-color: #17a2b8;
+}
+
+.alert-warning {
+    background-color: #ffc107;
+}
+.alert .close {
+    margin-left: 10px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #fff;
+    cursor: pointer;
+}
+.flash-container {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+.flash-container .alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
