@@ -8,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import qrcode
 from functools import wraps
 from app import create_app, db
-from Event_ticket_booking_system.app.ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
+from app.ORM.DBClasses import db, User, Event, Seat, Booking, BookingSeat, Ticket, TicketTier, EventTicketTier, PaymentDetail, Payment
 from flask_mail import Mail, Message
 from flask import request
 from cryptography.fernet import Fernet
