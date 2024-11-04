@@ -30,7 +30,7 @@ An Event Ticket Booking System that allows users to browse, search, and book tic
 ---
 
 ## 🗃️ Database Design
-Below is the ER diagram for the Event Ticket Booking System:
+Below is the ER diagram for the Event Ticket Booking System: (using https://drawsql.app/)
 
 ![ER Diagram](database_setup/ER_Diagram.png)
 
