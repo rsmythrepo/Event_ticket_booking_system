@@ -27,8 +27,32 @@ An Event Ticket Booking System that allows users to browse, search, and book tic
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-### 🚀 Installation & Setup
-#### Prerequisites
+---
+
+## 🗃️ Database Design
+Below is the ER diagram for the Event Ticket Booking System:
+
+![ER Diagram](database_setup/ER_Diagram.png)
+
+| Table Name        | Description                                                                                     |
+|-------------------|-------------------------------------------------------------------------------------------------|
+| role              | Stores user roles with unique role IDs and role names.                                          |
+| user              | Holds user information including names, emails, passwords, and associated roles.                |
+| event             | Contains details of events including title, venue, dates, and ticket availability.              |
+| booking           | Represents user bookings for events, including total amount and status.                         |
+| ticket_tier       | Defines different ticket tiers and their prices.                                                |
+| event_ticket_tier | Links events to ticket tiers, specifying total tickets per tier.                                |
+| seat              | Lists seats for events, indicating tier, availability, and unique seat numbers.                 |
+| booking_seat      | Maps seats to bookings to track reserved seats for each booking.                                |
+| ticket            | Represents tickets issued for bookings, including event, seat, and tier information.            |
+| notification      | Stores notifications sent to users related to events, including status and type.                |
+| payment_detail    | Contains payment details for users, such as card type and billing information.                  |
+| payment           | Tracks payments for bookings, including amount, status, and associated payment details.         |
+
+---
+
+## 🚀 Installation & Setup
+### Prerequisites
 - 🐋 **Docker** installed and running
 - 🐍 **Python 3.9+** and pip (for local development)
 - 🗃️ **MySQL server** setup (local or cloud-based)
@@ -117,13 +141,6 @@ An Event Ticket Booking System that allows users to browse, search, and book tic
 
 8. **Access the app from EC2:**
    Open [http://<EC2_PUBLIC_IP>:5000](http://<EC2_PUBLIC_IP>:5000) in your web browser.
-
----
-
-## 🗃️ Database Design
-Below is the ER diagram for the Event Ticket Booking System:
-
-![ER Diagram](database_setup/ER_Diagram.png)
 
 ---
 
