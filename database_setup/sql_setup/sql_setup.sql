@@ -1,4 +1,4 @@
-CREATE DATABASE event_bookings;
+CREATE DATABASE IF NOT EXISTS event_bookings;
 USE event_bookings;
 
 CREATE TABLE role (
