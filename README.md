@@ -13,16 +13,20 @@ An Event Ticket Booking System that allows users to browse, search, and book tic
 - Dynamic Pricing: Support for different ticket tiers with varying prices.
 - Payment Processing: Secure payment handling with the ability to save payment details.
 
-#### Technologies
-Python, Flask, Flask-SQLAlchemy
-- MySQL: Relational database for storing structured data.
-- Flask-Mail: For sending email notifications.
-- Cryptography: Encryption for sensitive user data such as payment details.
-- Bash-scripting: Automation of toil
-- Flask Templates (HTML, CSS, JavaScript): For rendering dynamic pages.
-- Bootstrap: Responsive design framework for a modern UI.
-- JavaScript: For interactivity and seamless data fetching.
-- Docker: Containerized development and deployment.
+## Technology Stack
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Flask-SQLAlchemy](https://img.shields.io/badge/Flask--SQLAlchemy-DA291C?style=for-the-badge&logo=python&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Flask-Mail](https://img.shields.io/badge/Flask--Mail-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Cryptography](https://img.shields.io/badge/Cryptography-6A5ACD?style=for-the-badge&logo=python&logoColor=white)
+![Bash](https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
 
 
 
