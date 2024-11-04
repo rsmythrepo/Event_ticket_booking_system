@@ -26,8 +26,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: event_bookings
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
     volumes:
       - "./database_setup/sql_setup:/docker-entrypoint-initdb.d"
     ports:
